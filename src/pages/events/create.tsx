@@ -1,7 +1,6 @@
 import Navbar from "@/components/Navbar/Navbar";
 import { Button, TextField } from "@mui/material";
 
-
 export default function CreateEvents() {
     return (
 

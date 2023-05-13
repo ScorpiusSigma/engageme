@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar/Navbar";
 import { TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
+import Link from "next/link";
 
 
 export default function Events() {
@@ -16,7 +17,7 @@ export default function Events() {
 
                 <div className="mt-4">
                     {events.length == 0 ? (
-                        <div>You don't have any! Click here to create your first event :)</div>
+                        <div>You don't have any! Click <Link href={'/events/create'} className=" underline text-my_blue">here</Link> to create your first event :)</div>
                     ) :
                         (
                             <TableContainer>
