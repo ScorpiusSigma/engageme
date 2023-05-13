@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import styles from '../styles/Home.module.css';
 import Navbar from '@/components/Navbar/Navbar';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useRouter } from 'next/router';
 // import Navbar from '@/components/Navbar/Navbar';
 
 // const WalletDisconnectButtonDynamic = dynamic(
@@ -21,7 +22,12 @@ const Home: NextPage = () => {
     const { connection } = useConnection();
     const { publicKey } = useWallet();
 
+    const router = useRouter();
 
+    useEffect(()=>{
+        if( !publicKey) return;
+        router.push("/events");
+    },[publicKey])
 
     return (
         <div className="h-screen w-full bg-white dark:bg-slate-800 dark:text-white font-robo">
