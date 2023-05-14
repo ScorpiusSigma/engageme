@@ -4,6 +4,7 @@ import {
 	Connection,
 	Keypair,
 	PublicKey,
+	SystemProgram,
 	Transaction,
 } from "@solana/web3.js";
 import base58 from "bs58";
@@ -13,6 +14,7 @@ import {
 	getMint,
 	getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
+import { GuestIdentityDriver } from "@metaplex-foundation/js";
 
 // Mainnet USDC, uncomment if using mainnet
 // const USDC_ADDRESS = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
@@ -40,7 +42,7 @@ export type PostError = {
 
 function get(res: NextApiResponse<GetResponse>) {
 	res.status(200).json({
-		label: "My Store",
+		label: "Builders League",
 		icon: "https://solana.com/src/img/branding/solanaLogoMark.svg",
 	});
 }
@@ -51,9 +53,8 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	// Get the sender's account
 	const collectionOwnerPrivateKey = process.env.COLLECTION_OWNER_PRIVATE_KEY;
 	if (!collectionOwnerPrivateKey) {
-		throw new Error("SHOP_PRIVATE_KEY not found");
+		throw new Error("COLLECTION_OWNER_PRIVATE_KEY not found");
 	}
-
 	const collectionOwnerKeypair = Keypair.fromSecretKey(
 		base58.decode(collectionOwnerPrivateKey)
 	);
@@ -96,8 +97,17 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 		decimals
 	);
 
+	// Create a transaction instruction with a 0-lamport transfer
+	const instruction = SystemProgram.transfer({
+		fromPubkey: receiverPubKey,
+		toPubkey: senderPubKey,
+		lamports: 0,
+	});
+
 	// Create a new Transaction
-	const transaction = new Transaction().add(nftTransferInstruction);
+	const transaction = new Transaction()
+		.add(nftTransferInstruction)
+		.add(instruction);
 	const recentBlockhash = await connection.getLatestBlockhash();
 	transaction.recentBlockhash = recentBlockhash.blockhash;
 	transaction.feePayer = senderPubKey;
@@ -107,7 +117,7 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	});
 
 	const base64 = serializedTransaction.toString("base64");
-	const message = "Please approve the transaction to mint your ticket NFT!";
+	const message = "Please approve the transaction to mint ticket NFT!";
 
 	// Return the serialized transaction
 	return {
