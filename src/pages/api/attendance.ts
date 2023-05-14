@@ -70,8 +70,6 @@ async function takeAttendance(userAccount: PublicKey, orgAccount: PublicKey) {
 	transaction.recentBlockhash = recentBlockhash.blockhash;
 	transaction.feePayer = orgAccount;
 
-	transaction.partialSign();
-
 	const serializedTransaction = transaction.serialize({
 		requireAllSignatures: false,
 	});
