@@ -164,18 +164,16 @@ async function postImpl(
 	mintAccount: PublicKey,
 	orgAccount: PublicKey,
 	hash: any
-): Promise<PostResponse> {
+): Promise<PostResponse | PostError> {
 	// if (!(hash in HashedSecretKey && createHashKey(orgAccount) == hash)) {
 	// 	return {
-	// 		transaction: "Not SIU",
-	// 		message: "Invalid Hash!",
+	// 		error: "Invalid Hash!",
 	// 	}; // User has an NFT from the desired collection
 	// }
 
 	// if (await isAttendanceTaken(userAccount, orgAccount)) {
 	// 	return {
-	// 		transaction: "Not SIU",
-	// 		message: "Attendance already taken!",
+	// 		error: "Attendance already taken!",
 	// 	}; // User has an NFT from the desired collection
 	// }
 
@@ -211,8 +209,7 @@ async function postImpl(
 	}
 
 	return {
-		transaction: "Not SIU",
-		message: "You dont have a valid NFT",
+		error: "You dont have a valid NFT",
 	}; // User has an NFT from the desired collection
 }
 
