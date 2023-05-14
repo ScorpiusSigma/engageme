@@ -1,3 +1,13 @@
+/**
+ * #TODO: check is datetime is enabled for redemption
+ * Check how many time this link has been hit before redemption
+ * uuid map to NFT
+ *
+ * User will have the qr generated on their website and organiser will scan with their phone to verify the user
+ *
+ * 24032023faoisjfneljnvpaidsuhnr
+ *  */
+
 import { NextApiRequest, NextApiResponse } from "next";
 import {
 	clusterApiUrl,
@@ -66,7 +76,7 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	// Define the NFT mint address
 	// This address will be take from the database
 	const nftMintPubKey = new PublicKey(
-		"9pBcndZY6cbXSCqHemnmL3Aj74QERh4E2GdcMaDQz3GM"
+		"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm"
 	);
 
 	// Get the collection owner's NFT address
@@ -97,24 +107,23 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 		decimals
 	);
 
-	// Create a transaction instruction with a 0-lamport transfer
-	const instruction = SystemProgram.transfer({
-		fromPubkey: receiverPubKey,
-		toPubkey: senderPubKey,
-		lamports: 0,
-	});
+	// // // Create a transaction instruction with a 0-lamport transfer
+	// const instruction = SystemProgram.transfer({
+	// 	fromPubkey: receiverPubKey,
+	// 	toPubkey: senderPubKey,
+	// 	lamports: 0,
+	// });
 
 	// Create a new Transaction
-	const transaction = new Transaction()
-		.add(nftTransferInstruction)
-		.add(instruction);
+	const transaction = new Transaction().add(nftTransferInstruction);
+	// .add(instruction);
 	const recentBlockhash = await connection.getLatestBlockhash();
 	transaction.recentBlockhash = recentBlockhash.blockhash;
 	transaction.feePayer = senderPubKey;
 
 	// Partially sign the transaction, as the shop and the mint
 	// The account is also a required signer, but they'll sign it with their wallet after we return it
-	transaction.sign(collectionOwnerKeypair);
+	transaction.partialSign(collectionOwnerKeypair);
 
 	const serializedTransaction = transaction.serialize({
 		requireAllSignatures: false,
