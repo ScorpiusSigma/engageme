@@ -4,6 +4,7 @@ import {
 	Connection,
 	Keypair,
 	PublicKey,
+	SystemProgram,
 	Transaction,
 } from "@solana/web3.js";
 import base58 from "bs58";
@@ -41,7 +42,7 @@ export type PostError = {
 
 function get(res: NextApiResponse<GetResponse>) {
 	res.status(200).json({
-		label: "My Store",
+		label: "Builders League",
 		icon: "https://solana.com/src/img/branding/solanaLogoMark.svg",
 	});
 }
@@ -52,14 +53,14 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	// Get the sender's account
 	const collectionOwnerPrivateKey = process.env.COLLECTION_OWNER_PRIVATE_KEY;
 	if (!collectionOwnerPrivateKey) {
-		throw new Error("SHOP_PRIVATE_KEY not found");
+		throw new Error("COLLECTION_OWNER_PRIVATE_KEY not found");
 	}
 	const collectionOwnerKeypair = Keypair.fromSecretKey(
 		base58.decode(collectionOwnerPrivateKey)
 	);
 
 	// Define the sender and receiver public keys
-	const senderPubKey = new PublicKey(collectionOwnerKeypair);
+	const senderPubKey = collectionOwnerKeypair.publicKey;
 	const receiverPubKey = new PublicKey(account);
 
 	// Define the NFT mint address
@@ -96,8 +97,17 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 		decimals
 	);
 
+	// Create a transaction instruction with a 0-lamport transfer
+	const instruction = SystemProgram.transfer({
+		fromPubkey: receiverPubKey,
+		toPubkey: senderPubKey,
+		lamports: 0,
+	});
+
 	// Create a new Transaction
-	const transaction = new Transaction().add(nftTransferInstruction);
+	const transaction = new Transaction()
+		.add(nftTransferInstruction)
+		.add(instruction);
 	const recentBlockhash = await connection.getLatestBlockhash();
 	transaction.recentBlockhash = recentBlockhash.blockhash;
 	transaction.feePayer = senderPubKey;
