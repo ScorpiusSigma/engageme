@@ -194,8 +194,8 @@ async function postImpl(
 		const tokenAddress = account.account.data.parsed.info.mint;
 
 		let nft;
+		// 2b. Get NFT details with Metaplex.
 		try {
-			// 2b. Get NFT details with Metaplex.
 			nft = await metaplex
 				.nfts()
 				.findByMint({ mintAddress: new PublicKey(tokenAddress) });
@@ -204,6 +204,7 @@ async function postImpl(
 		// 2c. Get the collection address and verification.
 		const mintAddress = nft?.collection?.address.toString();
 		const isVerified = nft?.collection?.verified;
+
 		// 2d. Check if the collection address is the correct one and if it is verified.
 		if (mintAddress === mintAccount.toString() && isVerified) {
 			return await takeAttendance(userAccount, orgAccount);
