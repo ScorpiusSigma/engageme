@@ -67,7 +67,7 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	const nftMintPubKey = new PublicKey(
 		"9pBcndZY6cbXSCqHemnmL3Aj74QERh4E2GdcMaDQz3GM"
 	);
- 
+
 	// Get the collection owner's NFT address
 	const senderNftAddress = await getOrCreateAssociatedTokenAccount(
 		connection,
