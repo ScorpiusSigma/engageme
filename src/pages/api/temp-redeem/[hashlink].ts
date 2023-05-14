@@ -64,8 +64,11 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 
 	// Get the shop keypair from the environment variable
 	const CollectionOwnerPrivateKey = process.env.COLLECTION_OWNER_PRIVATE_KEY;
-	if (!CollectionOwnerPrivateKey) throw new Error("SHOP_PRIVATE_KEY not found");
-	const shopKeypair = Keypair.fromSecretKey(base58.decode(CollectionOwnerPrivateKey));
+	if (!CollectionOwnerPrivateKey)
+		throw new Error("SHOP_PRIVATE_KEY not found");
+	const shopKeypair = Keypair.fromSecretKey(
+		base58.decode(CollectionOwnerPrivateKey)
+	);
 
 	// Initialise Metaplex with our shop keypair
 	const metaplex = Metaplex.make(connection).use(

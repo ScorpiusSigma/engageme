@@ -193,15 +193,17 @@ async function postImpl(
 		// 2a. Get NFT token address.
 		const tokenAddress = account.account.data.parsed.info.mint;
 
-		// 2b. Get NFT details with Metaplex.
-		const nft = await metaplex
-			.nfts()
-			.findByMint({ mintAddress: new PublicKey(tokenAddress) });
+		let nft;
+		try {
+			// 2b. Get NFT details with Metaplex.
+			nft = await metaplex
+				.nfts()
+				.findByMint({ mintAddress: new PublicKey(tokenAddress) });
+		} catch (e) {}
 
 		// 2c. Get the collection address and verification.
-		const mintAddress = nft.collection?.address.toString();
-		const isVerified = nft.collection?.verified;
-
+		const mintAddress = nft?.collection?.address.toString();
+		const isVerified = nft?.collection?.verified;
 		// 2d. Check if the collection address is the correct one and if it is verified.
 		if (mintAddress === mintAccount.toString() && isVerified) {
 			return await takeAttendance(userAccount, orgAccount);

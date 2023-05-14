@@ -13,7 +13,6 @@ import {
 	getMint,
 	getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
-import { GuestIdentityDriver } from "@metaplex-foundation/js";
 
 // Mainnet USDC, uncomment if using mainnet
 // const USDC_ADDRESS = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
@@ -54,12 +53,13 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	if (!collectionOwnerPrivateKey) {
 		throw new Error("SHOP_PRIVATE_KEY not found");
 	}
+
 	const collectionOwnerKeypair = Keypair.fromSecretKey(
 		base58.decode(collectionOwnerPrivateKey)
 	);
 
 	// Define the sender and receiver public keys
-	const senderPubKey = new PublicKey(collectionOwnerKeypair);
+	const senderPubKey = collectionOwnerKeypair.publicKey;
 	const receiverPubKey = new PublicKey(account);
 
 	// Define the NFT mint address
@@ -107,7 +107,7 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	});
 
 	const base64 = serializedTransaction.toString("base64");
-	const message = "Please approve the transaction to mint ticket NFT!";
+	const message = "Please approve the transaction to mint your ticket NFT!";
 
 	// Return the serialized transaction
 	return {
