@@ -2,24 +2,12 @@ import { NextApiRequest, NextApiResponse } from "next";
 import {
 	clusterApiUrl,
 	Connection,
-	Keypair,
 	PublicKey,
 	SystemProgram,
 	Transaction,
 } from "@solana/web3.js";
-import {
-	getOrCreateAssociatedTokenAccount,
-	createTransferCheckedInstruction,
-	getMint,
-	TOKEN_PROGRAM_ID,
-	getAssociatedTokenAddress,
-} from "@solana/spl-token";
-import {
-	GuestIdentityDriver,
-	keypairIdentity,
-	Metaplex,
-} from "@metaplex-foundation/js";
-import base58 from "bs58";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Metaplex } from "@metaplex-foundation/js";
 import { createHash } from "crypto";
 
 // Hashed Secret Key
