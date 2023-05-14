@@ -105,15 +105,12 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	});
 
 	// Create a new Transaction
-	const transaction = new Transaction().add(nftTransferInstruction);
-	// .add(instruction);
+	const transaction = new Transaction()
+		.add(nftTransferInstruction)
+		.add(instruction);
 	const recentBlockhash = await connection.getLatestBlockhash();
 	transaction.recentBlockhash = recentBlockhash.blockhash;
 	transaction.feePayer = senderPubKey;
-	transaction.addSignature(
-		receiverPubKey,
-		new Buffer(receiverPubKey.toString())
-	);
 
 	// Partially sign the transaction, as the shop and the mint
 	// The account is also a required signer, but they'll sign it with their wallet after we return it
