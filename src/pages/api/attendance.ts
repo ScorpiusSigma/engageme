@@ -165,16 +165,20 @@ async function postImpl(
 	orgAccount: PublicKey,
 	hash: any
 ): Promise<PostResponse> {
-	if (
-		(await isAttendanceTaken(userAccount, orgAccount)) &&
-		hash in HashedSecretKey &&
-		createHashKey(orgAccount) == hash
-	) {
-		return {
-			transaction: "Not SIU",
-			message: "Attendance already taken!",
-		}; // User has an NFT from the desired collection
-	}
+	// if (!(hash in HashedSecretKey && createHashKey(orgAccount) == hash)) {
+	// 	return {
+	// 		transaction: "Not SIU",
+	// 		message: "Invalid Hash!",
+	// 	}; // User has an NFT from the desired collection
+	// }
+
+	// if (await isAttendanceTaken(userAccount, orgAccount)) {
+	// 	return {
+	// 		transaction: "Not SIU",
+	// 		message: "Attendance already taken!",
+	// 	}; // User has an NFT from the desired collection
+	// }
+
 	const connection = new Connection(ENDPOINT);
 	const metaplex = new Metaplex(connection);
 
