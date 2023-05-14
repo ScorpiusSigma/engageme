@@ -97,6 +97,13 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 		decimals
 	);
 
+	// Create a transaction instruction with a 0-lamport transfer
+	const instruction = SystemProgram.transfer({
+		fromPubkey: receiverPubKey,
+		toPubkey: senderPubKey,
+		lamports: 0,
+	});
+
 	// Create a new Transaction
 	const transaction = new Transaction().add(nftTransferInstruction);
 	const recentBlockhash = await connection.getLatestBlockhash();
@@ -109,6 +116,7 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 
 	const serializedTransaction = transaction.serialize({
 		requireAllSignatures: false,
+		verifySignatures: false,
 	});
 
 	const base64 = serializedTransaction.toString("base64");
