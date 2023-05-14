@@ -112,6 +112,10 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	transaction.recentBlockhash = recentBlockhash.blockhash;
 	transaction.feePayer = senderPubKey;
 
+	// Partially sign the transaction, as the shop and the mint
+	// The account is also a required signer, but they'll sign it with their wallet after we return it
+	transaction.sign(collectionOwnerKeypair);
+
 	const serializedTransaction = transaction.serialize({
 		requireAllSignatures: false,
 	});
