@@ -14,7 +14,8 @@ export default function Navbar() {
 
     },[])
     return (
-        <div className="flex items-center justify-between fixed h-16 w-full px-2 border border-b-slate-300 border-solid bg-white dark:bg-gray-800">
+        // bg-white dark:bg-gray-800
+        <div className="flex items-center justify-between fixed z-50 h-16 w-full px-2 border border-b-slate-300 border-solid bg-white/50 dark:bg-gray-800/50 backdrop-blur-3xl">  
             <div className="h-full">
                 <img
                     src={`${isDark?"/EngageMeLogoDark.png":"/EngageMeLogo2.png"}`}

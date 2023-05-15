@@ -6,8 +6,10 @@ export default function CreateEvents() {
 
         <div className="h-screen w-full flex items-center justify-center bg-white dark:bg-slate-800 dark:text-white font-robo">
             <div className="flex flex-col">
-                <TextField id="filled-basic" label="Name" variant="outlined" />
-                <Button variant="contained" className=" text-black dark:text-white mt-4">Create 🌈</Button>
+                <div className="relative mb-4">
+                    <TextField id="filled-basic" label="Name" placeholder="Friday Movie Night" variant="outlined" />
+                </div>
+                <Button variant="contained" className=" text-black dark:text-white">Create 🌈</Button>
             </div>
         </div>
     )
