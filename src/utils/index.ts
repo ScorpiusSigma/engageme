@@ -1,5 +1,35 @@
-import { PublicKey, token } from "@metaplex-foundation/js";
+import { Metaplex, PublicKey, token } from "@metaplex-foundation/js";
+import {
+	TOKEN_PROGRAM_ID,
+	createTransferInstruction,
+	getOrCreateAssociatedTokenAccount,
+} from "@solana/spl-token";
+import {
+	Connection,
+	Keypair,
+	SystemProgram,
+	Transaction,
+	clusterApiUrl,
+	sendAndConfirmTransaction,
+} from "@solana/web3.js";
+import base58 from "bs58";
 import { createHash } from "crypto";
+
+export const ENDPOINT = clusterApiUrl("devnet");
+export const MINT_ACCOUNT = "3qQ2nNoyKtgwgZQ9M9YW4LykE6k4mHd1atSbMUJP124z";
+
+function unixTimestampToDate(timestamp: number): Date {
+	return new Date(timestamp * 1000);
+}
+
+function isToday(date: Date): boolean {
+	const today = new Date();
+	return (
+		date.getDate() >= today.getDate() &&
+		date.getMonth() >= today.getMonth() &&
+		date.getFullYear() >= today.getFullYear()
+	);
+}
 
 export const createHashAuth = (
 	walletAddress: PublicKey,
@@ -33,3 +63,197 @@ export const generateQrCodeLink = (
 	const hash = createHashAuth(walletAddress, tokenAddress);
 	return `${host}/api/attendace-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${orgAccount}`;
 };
+
+export const isValidWallet = (wallet: PublicKey) => {
+	// Check the db if its inside
+};
+
+export async function takeAttendance(
+	attendaceTakerAccount: PublicKey,
+	userAccount: PublicKey,
+	orgAccount: PublicKey
+) {
+	// Fetch the recent blockhash
+	const connection = new Connection(ENDPOINT);
+	const recentBlockhash = await connection.getLatestBlockhash();
+
+	// Create a transaction instruction with a 0-lamport transfer
+	const instruction = SystemProgram.transfer({
+		fromPubkey: attendaceTakerAccount,
+		toPubkey: userAccount,
+		lamports: 0,
+	});
+
+	// Create a transaction with the instruction
+	const transaction = new Transaction().add(instruction);
+	transaction.recentBlockhash = recentBlockhash.blockhash;
+	transaction.feePayer = orgAccount;
+
+	const serializedTransaction = transaction.serialize({
+		requireAllSignatures: false,
+	});
+
+	const base64 = serializedTransaction.toString("base64");
+	const message = "Please approve the transaction to take your attendance!";
+
+	return {
+		transaction: base64,
+		message,
+	};
+}
+
+export async function isAttendanceTaken(
+	userAccount: PublicKey,
+	orgAccount: PublicKey
+) {
+	const LIMIT = 15;
+	const connection = new Connection(ENDPOINT);
+	const recentBlockhash = await connection.getLatestBlockhash();
+
+	connection
+		.getConfirmedSignaturesForAddress2(userAccount)
+		.then(async (signatures) => {
+			const filterSignatures = signatures.filter(
+				(x, index) => index < LIMIT
+			);
+
+			for (const signature of filterSignatures) {
+				// Get the confirmed transaction details
+				const transaction = await connection.getConfirmedTransaction(
+					signature.signature
+				);
+
+				if (transaction) {
+					// Access the recipient's public key
+					const recipientPublicKey = transaction.transaction;
+					const blockTime = transaction.blockTime;
+
+					if (blockTime) {
+						const transactionTime = unixTimestampToDate(blockTime);
+						console.log("Transaction Time:", transactionTime);
+
+						if (
+							/**
+							 * Needs a better way to check if this transaction is attendance taking.
+							 * Right now the check is just checking if the fee payer is the orgniser
+							 * */
+							recipientPublicKey.feePayer?.equals(orgAccount) &&
+							isToday(transactionTime)
+						) {
+							return true;
+						}
+					}
+				}
+			}
+		});
+
+	return false;
+}
+
+export async function isRedeemed(recvWallet: PublicKey) {
+	const connection = new Connection(ENDPOINT);
+	const metaplex = new Metaplex(connection);
+
+	// 1. Fetch the user's token accounts
+	const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+		recvWallet,
+		{
+			programId: TOKEN_PROGRAM_ID,
+		}
+	);
+
+	// 2. Check if any of the token accounts belong to the desired collection address.
+	for (const account of tokenAccounts.value) {
+		// 2a. Get NFT token address.
+		const tokenAddress = account.account.data.parsed.info.mint;
+
+		let nft;
+		// 2b. Get NFT details with Metaplex.
+		try {
+			nft = await metaplex
+				.nfts()
+				.findByMint({ mintAddress: new PublicKey(tokenAddress) });
+		} catch (e) {
+			continue;
+		}
+
+		// 2c. Get the collection address and verification.
+		const mintAddress = nft?.collection?.address.toString();
+		const isVerified = nft?.collection?.verified;
+
+		// 2d. Check if the collection address is the correct one and if it is verified.
+		if (mintAddress === MINT_ACCOUNT && isVerified) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+export async function getMintAddressOfToken(tokenAddress: PublicKey) {
+	const connection = new Connection(ENDPOINT);
+	const metaplex = new Metaplex(connection);
+
+	let nft;
+	// 2b. Get NFT details with Metaplex.
+	try {
+		nft = await metaplex
+			.nfts()
+			.findByMint({ mintAddress: new PublicKey(tokenAddress) });
+	} catch (e) {
+		return "";
+	}
+
+	// 2c. Get the collection address and verification.
+	const mintAddress = nft?.collection?.address.toString();
+	return mintAddress || "";
+}
+
+export async function redeem(recvWallet: PublicKey) {
+	// This will be the token address of the NFT
+	const MINT = "Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
+
+	// connection
+	const connection = new Connection(ENDPOINT);
+
+	// Collection owner keypair
+	if (!process.env.COLLECTION_OWNER_PRIVATE_KEY) {
+		console.log("COLLECTION_OWNER_PRIVATE_KEY not found!");
+		return;
+	}
+	const collectionOwnerKeypair = Keypair.fromSecretKey(
+		base58.decode(process.env.COLLECTION_OWNER_PRIVATE_KEY)
+	);
+
+	const mintPublicKey = new PublicKey(MINT);
+	const ownerPublicKey = collectionOwnerKeypair.publicKey;
+	const destPublicKey = recvWallet;
+
+	const senderTokenAccount = await getOrCreateAssociatedTokenAccount(
+		connection,
+		collectionOwnerKeypair,
+		mintPublicKey,
+		ownerPublicKey
+	);
+
+	const receiverTokenAccount = await getOrCreateAssociatedTokenAccount(
+		connection,
+		collectionOwnerKeypair,
+		mintPublicKey,
+		destPublicKey
+	);
+
+	const instruction = createTransferInstruction(
+		senderTokenAccount.address,
+		receiverTokenAccount.address,
+		ownerPublicKey,
+		1,
+		[collectionOwnerKeypair]
+	);
+
+	const transaction = new Transaction().add(instruction);
+
+	return await sendAndConfirmTransaction(connection, transaction, [
+		collectionOwnerKeypair,
+	]);
+}
