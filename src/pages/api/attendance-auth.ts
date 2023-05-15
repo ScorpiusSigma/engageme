@@ -159,7 +159,7 @@ async function post(
 			new PublicKey(orgAccount)
 		)
 	) {
-		res.status(500).json({ error: "Attendance already taken!" });
+		res.status(500).json({ error: "Attendance is already taken!" });
 	}
 
 	try {

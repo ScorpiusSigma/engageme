@@ -3,6 +3,7 @@ import { clusterApiUrl, PublicKey } from "@solana/web3.js";
 import {
 	createHashAuth,
 	generateQrCodeLink,
+	getBaseUrl,
 	getMintAddressOfToken,
 } from "@/utils";
 
@@ -63,7 +64,7 @@ async function post(
 	try {
 		const response = {
 			qrcode: generateQrCodeLink(
-				"req.headers.host",
+				getBaseUrl(req),
 				new PublicKey(account),
 				new PublicKey(token),
 				new PublicKey(

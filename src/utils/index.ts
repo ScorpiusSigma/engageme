@@ -14,6 +14,7 @@ import {
 } from "@solana/web3.js";
 import base58 from "bs58";
 import { createHash } from "crypto";
+import { NextApiRequest } from "next";
 
 export const ENDPOINT = clusterApiUrl("devnet");
 export const MINT_ACCOUNT = "3qQ2nNoyKtgwgZQ9M9YW4LykE6k4mHd1atSbMUJP124z";
@@ -134,7 +135,7 @@ export async function isAttendanceTaken(
 
 						if (
 							/**
-							 * Needs a better way to check if this transaction is attendance taking.
+							 * TODO: Needs a better way to check if this transaction is attendance taking.
 							 * Right now the check is just checking if the fee payer is the orgniser
 							 * */
 							recipientPublicKey.feePayer?.equals(orgAccount) &&
@@ -256,4 +257,13 @@ export async function redeem(recvWallet: PublicKey) {
 	return await sendAndConfirmTransaction(connection, transaction, [
 		collectionOwnerKeypair,
 	]);
+}
+
+export function getBaseUrl(req: NextApiRequest) {
+	return (
+		req.headers.referer
+			?.split("/")
+			.filter((x, index) => index < 3)
+			.join("/") || ""
+	);
 }
