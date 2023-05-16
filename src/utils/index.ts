@@ -1,3 +1,4 @@
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { Metaplex, PublicKey, token } from "@metaplex-foundation/js";
 import {
 	TOKEN_PROGRAM_ID,
@@ -331,4 +332,12 @@ export function getAttendanceMetric() {
 		});
 
 	return metric;
+}
+
+
+export const ddbClient = new DynamoDBClient({});
+
+export const ddbTables = {
+	evt: "events",
+	evt_part: "evt_participants"
 }

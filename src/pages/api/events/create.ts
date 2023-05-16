@@ -1,8 +1,22 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
+import * as uuid from 'uuid';
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  GetItemCommand,
+  UpdateItemCommand,
+  DeleteItemCommand
+} from '@aws-sdk/client-dynamodb';
+import { ddbClient, ddbTables } from "@/utils";
 type PostParam = {
-	name: string,
-}
+	name: string;
+	description: string;
+	startDate: string;
+	endDate: string;
+	organiser: string;
+};
+
 type PostResponse = {
 	message: string;
     id: string
@@ -12,8 +26,30 @@ type PostError = {
 };
 
 async function postImpl(evtDetails: PostParam)  : Promise<PostResponse> {
+	const client = ddbClient;
+
+	const evtDetails2 = {
+		name: {S: evtDetails.name},
+		description: {S: evtDetails.description},
+		startDate: {S: evtDetails.startDate},
+		endDate: {S: evtDetails.endDate},
+		organiser: {S: evtDetails.organiser},
+	}
+
+	const Item = {
+		evnet_id: { S: uuid.v4() },
+		...evtDetails2
+	  };
+	  await client.send(
+		new PutItemCommand({
+		  TableName: ddbTables.evt,
+		  Item,
+		})
+	  );
+  
+	//   return res.status(201).json(Item);
 	const message =
-		"Event Edit Success!";
+		"Create Event Success!";
         const id = (1).toString(); // stick to incremental id , then can follow this method possibly https://stackoverflow.com/questions/53550001/get-latest-max-for-each-partition-key
 	return {
 		message,

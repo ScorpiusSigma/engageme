@@ -1,14 +1,45 @@
 import Navbar from "@/components/Navbar/Navbar";
 import { Button, TextField } from "@mui/material";
+import Datepicker from "react-tailwindcss-datepicker"; 
+
 import { useState } from "react";
+import { DateValueType } from "react-tailwindcss-datepicker/dist/types";
+import { useWallet } from "@solana/wallet-adapter-react";
+
+enum Status {
+    wait,
+    success,
+    nth,
+    err
+}
 
 export default function CreateEvents() {
 
+    const { publicKey } = useWallet();
     const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [dates, setDates] = useState<DateValueType>(null);
+
+    const [submitStatus, setSubmitStatus] = useState(Status.nth)
+    const [statMsg, setStatMsg] = useState("");
+
 
     const creteEvent = async() => {
+
+        let startDate = dates?.startDate
+        let endDate = dates?.endDate
+        if (startDate == null || endDate == null) {
+            setSubmitStatus(Status.err)
+            setStatMsg("Please fill in all form fields!")
+            return
+        }
+
         const params = JSON.stringify({
-            name: ""
+            name: name,
+            description: description,
+            startDate: startDate,
+            endDate: endDate,
+            organiser: publicKey
         })
         const res = await fetch("/api/events/create", {
             method: "POST",
@@ -18,6 +49,16 @@ export default function CreateEvents() {
               Accept: 'application/json',
             })
           });
+
+        if (res.status != 200) {
+            setSubmitStatus(Status.err)
+            setStatMsg("Invalid form submission, please try again.");
+            return
+        }
+
+
+        setSubmitStatus(Status.success)
+        setStatMsg("Success! You'll be redirected to your event page shortly~")
     }
 
     return (
@@ -30,14 +71,28 @@ export default function CreateEvents() {
                     }} />
                 </div>
                 <div className="relative mb-4">
-                    <TextField id="filled-basic" label="Description" fullWidth placeholder="A day to unwind with chill movies" variant="outlined" />
+                    <TextField id="filled-basic" label="Description" fullWidth placeholder="A day to unwind with chill movies" variant="outlined" value={description} onChange={(e)=>{
+                        setDescription(e.target.value)
+                    }}/>
                 </div>
                 <div className="relative mb-4 flex justify-center items-center">
-                    <TextField id="filled-basic" label="Start Date" variant="outlined" />
-                    <span className="mx-4"> to </span>
-                    <TextField id="filled-basic" label="End Date" variant="outlined" />
+                    {/* <TextField id="filled-basic" label="Start Date" variant="outlined" /> */}
+                    <Datepicker value={dates} onChange={(date) => {
+                        console.log(date)
+                        setDates(date)
+                    }} />
+
+                    {/* <span className="mx-4"> to </span> */}
+                    {/* <TextField id="filled-basic" label="End Date" variant="outlined" /> */}
+                    {/* <Datepicker value={endDate} onChange={(date) => setEndDate(date)} /> */}
+
                 </div>
-                <Button variant="contained" className=" text-black dark:text-white">Create 🌈</Button>
+                {submitStatus != Status.nth && (
+                    <div className={Status.err?" text-red-500": "text-green-500"}>
+                        {statMsg}
+                    </div>
+                )}
+                <Button variant="contained" className=" text-black dark:text-white" onClick={creteEvent}>Create 🌈</Button>
                 
             </div>
         </div>
