@@ -18,6 +18,7 @@ import { NextApiRequest } from "next";
 
 export const ENDPOINT = clusterApiUrl("devnet");
 export const MINT_ACCOUNT = "3qQ2nNoyKtgwgZQ9M9YW4LykE6k4mHd1atSbMUJP124z";
+export const ORG_ACCOUNT = "9uNgWMGhiGwMddgwgyE8T5FBTA4kZE4ry7bUxvVtnxor";
 
 function unixTimestampToDate(timestamp: number): Date {
 	return new Date(timestamp * 1000);
@@ -109,7 +110,6 @@ export async function isAttendanceTaken(
 ) {
 	const LIMIT = 15;
 	const connection = new Connection(ENDPOINT);
-	const recentBlockhash = await connection.getLatestBlockhash();
 
 	connection
 		.getConfirmedSignaturesForAddress2(userAccount)
@@ -266,4 +266,69 @@ export function getBaseUrl(req: NextApiRequest) {
 			.filter((x, index) => index < 3)
 			.join("/") || ""
 	);
+}
+
+export function getAttendanceMetric() {
+	const account = new PublicKey(ORG_ACCOUNT);
+	const connection = new Connection(ENDPOINT);
+
+	const metric = connection
+		.getConfirmedSignaturesForAddress2(account)
+		.then(async (signatures) => {
+			let metric = [];
+
+			const filterSignatures = signatures.filter(
+				(x, index) => index < 15
+			);
+
+			for (const signature of filterSignatures) {
+				// Get the confirmed transaction details
+				const transaction = await connection.getParsedTransaction(
+					signature.signature
+				);
+
+				if (transaction) {
+					// Access the recipient's public key
+					const recipientPublicKey = transaction.transaction;
+					const blockTime = transaction.blockTime;
+
+					if (blockTime) {
+						const receivingTokenAccount =
+							transaction.transaction.message.instructions[0]
+								?.parsed?.info?.destination;
+
+						if (!receivingTokenAccount) {
+							continue;
+						}
+
+						const receivingTokenAccountInfo = (
+							await connection.getParsedAccountInfo(
+								new PublicKey(receivingTokenAccount)
+							)
+						)?.value?.data?.parsed?.info?.owner;
+
+						if (!receivingTokenAccountInfo) {
+							continue;
+						}
+
+						const receivingAccount = new PublicKey(
+							receivingTokenAccountInfo
+						);
+
+						const transactionTime = unixTimestampToDate(blockTime);
+
+						if (!receivingAccount.equals(account)) {
+							metric.push({
+								datetime: transactionTime,
+								account: receivingAccount.toString(),
+							});
+						}
+					}
+				}
+			}
+
+			return metric;
+		});
+
+	return metric;
 }
