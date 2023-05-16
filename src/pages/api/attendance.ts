@@ -1,13 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { clusterApiUrl, Connection, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import {
-	clusterApiUrl,
-	Connection,
-	PublicKey,
-	SystemProgram,
-	Transaction,
-} from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+	createHashAuth,
+	ENDPOINT,
+	generateQrCodeLink,
+	getBaseUrl,
+	getMintAddressOfToken,
+} from "@/utils";
 import { Metaplex } from "@metaplex-foundation/js";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { createHash } from "crypto";
 
 // Hashed Secret Key
@@ -22,14 +23,12 @@ const HashedSecretKey = [
 	"eea7c3ae92bb4359d8b162a2115b82df8470cca4c9d8f0149d9752a9e0f5dc2e",
 ];
 
-const EVENT_START_DATETIME = "2052023";
-const EVENT_END_DATETIME = "2752023";
-
-// Connection endpoint, switch to a mainnet RPC if using mainnet
-const ENDPOINT = clusterApiUrl("devnet");
-
 type InputData = {
 	account: string;
+	wallet: string;
+	token: string;
+	mintAccount: string;
+	orgAccount: string;
 };
 
 type GetResponse = {
@@ -38,8 +37,7 @@ type GetResponse = {
 };
 
 export type PostResponse = {
-	transaction: string;
-	message: string;
+	qrcode: string;
 };
 
 export type PostError = {
@@ -159,98 +157,42 @@ function createHashKey(orgAccount: PublicKey): string {
 	return hash.digest("hex"); // Get the hexadecimal representation of the hash
 }
 
-async function postImpl(
-	userAccount: PublicKey,
-	mintAccount: PublicKey,
-	orgAccount: PublicKey,
-	hash: any
-): Promise<PostResponse | PostError> {
-	// if (!(hash in HashedSecretKey && createHashKey(orgAccount) == hash)) {
-	// 	return {
-	// 		error: "Invalid Hash!",
-	// 	}; // User has an NFT from the desired collection
-	// }
-
-	// if (await isAttendanceTaken(userAccount, orgAccount)) {
-	// 	return {
-	// 		error: "Attendance already taken!",
-	// 	}; // User has an NFT from the desired collection
-	// }
-
-	const connection = new Connection(ENDPOINT);
-	const metaplex = new Metaplex(connection);
-
-	// 1. Fetch the user's token accounts
-	const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-		userAccount,
-		{
-			programId: TOKEN_PROGRAM_ID,
-		}
-	);
-
-	// 2. Check if any of the token accounts belong to the desired collection address.
-	for (const account of tokenAccounts.value) {
-		// 2a. Get NFT token address.
-		const tokenAddress = account.account.data.parsed.info.mint;
-
-		let nft;
-		// 2b. Get NFT details with Metaplex.
-		try {
-			nft = await metaplex
-				.nfts()
-				.findByMint({ mintAddress: new PublicKey(tokenAddress) });
-		} catch (e) {}
-
-		// 2c. Get the collection address and verification.
-		const mintAddress = nft?.collection?.address.toString();
-		const isVerified = nft?.collection?.verified;
-
-		// 2d. Check if the collection address is the correct one and if it is verified.
-		if (mintAddress === mintAccount.toString() && isVerified) {
-			return await takeAttendance(userAccount, orgAccount);
-		}
-	}
-
-	return {
-		error: "You dont have a valid NFT",
-	}; // User has an NFT from the desired collection
-}
 
 async function post(
 	req: NextApiRequest,
 	res: NextApiResponse<PostResponse | PostError>
 ) {
-	const { account } = req.body as InputData;
-	const { mintAccount, orgAccount, hash } = req.query;
-
-	if (!account) {
-		res.status(400).json({ error: "No account provided" });
-		return;
-	}
-
-	if (!mintAccount) {
-		res.status(400).json({ error: "No token account provided" });
-		return;
-	}
+	const { account, token, orgAccount } = req.body as InputData;
 
 	if (!orgAccount) {
-		res.status(400).json({ error: "No organiser account provided" });
+		res.status(400).json({ error: "No organizer account provided" });
 		return;
 	}
 
-	if (!hash) {
-		res.status(400).json({ error: "No hash provided" });
+	if (!account) {
+		res.status(400).json({ error: "No wallet provided" });
+		return;
+	}
+
+	if (!token) {
+		res.status(400).json({ error: "No token provided" });
 		return;
 	}
 
 	try {
-		const mintOutputData = await postImpl(
-			new PublicKey(account),
-			new PublicKey(mintAccount),
-			new PublicKey(orgAccount),
-			hash
-		);
-		res.status(200).json(mintOutputData);
+		const response = {
+			qrcode: generateQrCodeLink(
+				getBaseUrl(req),
+				new PublicKey(account),
+				new PublicKey(token),
+				new PublicKey(
+					await getMintAddressOfToken(new PublicKey(token))
+				),
+				new PublicKey(orgAccount)
+			),
+		};
+
+		res.status(200).json(response);
 		return;
 	} catch (error) {
 		console.error(error);
@@ -263,9 +205,7 @@ export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse<GetResponse | PostResponse | PostError>
 ) {
-	if (req.method === "GET") {
-		return get(res);
-	} else if (req.method === "POST") {
+	if (req.method === "POST") {
 		return await post(req, res);
 	} else {
 		return res.status(405).json({ error: "Method not allowed" });
