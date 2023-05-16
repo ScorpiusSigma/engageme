@@ -162,8 +162,9 @@ async function post(
 	req: NextApiRequest,
 	res: NextApiResponse<PostResponse | PostError>
 ) {
+	console.log(req.body)
 	const { account, token, orgAccount } = req.body as InputData;
-
+	console.log(`Account: ${account} token: ${token} orgAccount: ${orgAccount}`)
 	if (!orgAccount) {
 		res.status(400).json({ error: "No organizer account provided" });
 		return;

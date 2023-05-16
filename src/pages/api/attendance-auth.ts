@@ -58,64 +58,6 @@ function get(res: NextApiResponse<GetResponse>) {
 	});
 }
 
-// async function postImpl(
-// 	userAccount: PublicKey,
-// 	mintAccount: PublicKey,
-// 	orgAccount: PublicKey
-// ): Promise<PostResponse | PostError> {
-// 	// if (!(hash in HashedSecretKey && createHashKey(orgAccount) == hash)) {
-// 	// 	return {
-// 	// 		error: "Invalid Hash!",
-// 	// 	}; // User has an NFT from the desired collection
-// 	// }
-
-// 	// if (await isAttendanceTaken(userAccount, orgAccount)) {
-// 	// 	return {
-// 	// 		error: "Attendance already taken!",
-// 	// 	}; // User has an NFT from the desired collection
-// 	// }
-
-// 	const connection = new Connection(ENDPOINT);
-// 	const metaplex = new Metaplex(connection);
-
-// 	// 1. Fetch the user's token accounts
-// 	const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-// 		userAccount,
-// 		{
-// 			programId: TOKEN_PROGRAM_ID,
-// 		}
-// 	);
-
-// 	// 2. Check if any of the token accounts belong to the desired collection address.
-// 	for (const account of tokenAccounts.value) {
-// 		// 2a. Get NFT token address.
-// 		const tokenAddress = account.account.data.parsed.info.mint;
-
-// 		let nft;
-// 		// 2b. Get NFT details with Metaplex.
-// 		try {
-// 			nft = await metaplex
-// 				.nfts()
-// 				.findByMint({ mintAddress: new PublicKey(tokenAddress) });
-// 		} catch (e) {
-// 			continue;
-// 		}
-
-// 		// 2c. Get the collection address and verification.
-// 		const mintAddress = nft?.collection?.address.toString();
-// 		const isVerified = nft?.collection?.verified;
-
-// 		// 2d. Check if the collection address is the correct one and if it is verified.
-// 		if (mintAddress === mintAccount.toString() && isVerified) {
-// 			return await takeAttendance(userAccount, orgAccount);
-// 		}
-// 	}
-
-// 	return {
-// 		error: "You dont have a valid NFT",
-// 	}; // User has an NFT from the desired collection
-// }
-
 async function post(
 	req: NextApiRequest,
 	res: NextApiResponse<PostResponse | PostError>
