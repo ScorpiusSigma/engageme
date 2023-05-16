@@ -5,6 +5,7 @@ import Datepicker from "react-tailwindcss-datepicker";
 import { useState } from "react";
 import { DateValueType } from "react-tailwindcss-datepicker/dist/types";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { useRouter } from "next/router";
 
 enum Status {
     wait,
@@ -15,6 +16,7 @@ enum Status {
 
 export default function CreateEvents() {
 
+    const router = useRouter();
     const { publicKey } = useWallet();
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -23,6 +25,9 @@ export default function CreateEvents() {
     const [submitStatus, setSubmitStatus] = useState(Status.nth)
     const [statMsg, setStatMsg] = useState("");
 
+    if (!publicKey) { 
+        router.push("/")
+    }
 
     const creteEvent = async() => {
 
@@ -55,10 +60,14 @@ export default function CreateEvents() {
             setStatMsg("Invalid form submission, please try again.");
             return
         }
+        const { id } = await res.json();
 
 
         setSubmitStatus(Status.success)
         setStatMsg("Success! You'll be redirected to your event page shortly~")
+        setTimeout(()=>{
+            router.push(`/events/${id}`);
+        }, 1000)
     }
 
     return (
@@ -76,16 +85,10 @@ export default function CreateEvents() {
                     }}/>
                 </div>
                 <div className="relative mb-4 flex justify-center items-center">
-                    {/* <TextField id="filled-basic" label="Start Date" variant="outlined" /> */}
                     <Datepicker value={dates} onChange={(date) => {
                         console.log(date)
                         setDates(date)
                     }} />
-
-                    {/* <span className="mx-4"> to </span> */}
-                    {/* <TextField id="filled-basic" label="End Date" variant="outlined" /> */}
-                    {/* <Datepicker value={endDate} onChange={(date) => setEndDate(date)} /> */}
-
                 </div>
                 {submitStatus != Status.nth && (
                     <div className={Status.err?" text-red-500": "text-green-500"}>
