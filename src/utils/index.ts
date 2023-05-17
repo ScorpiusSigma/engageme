@@ -92,6 +92,8 @@ export async function takeAttendance(
 	transaction.recentBlockhash = recentBlockhash.blockhash;
 	transaction.feePayer = orgAccount;
 
+	transaction.partialSign(getKeypair());
+
 	const serializedTransaction = transaction.serialize({
 		requireAllSignatures: false,
 	});
@@ -211,6 +213,19 @@ export async function getMintAddressOfToken(tokenAddress: PublicKey) {
 	return mintAddress || "";
 }
 
+const getKeypair = (): Keypair => {
+	// Collection owner keypair
+	if (!process.env.COLLECTION_OWNER_PRIVATE_KEY) {
+		console.log("COLLECTION_OWNER_PRIVATE_KEY not found!");
+		return new Keypair();
+	}
+	const keypair = Keypair.fromSecretKey(
+		base58.decode(process.env.COLLECTION_OWNER_PRIVATE_KEY)
+	);
+
+	return keypair;
+};
+
 export async function redeem(recvWallet: PublicKey) {
 	// This will be the token address of the NFT
 	const MINT = "Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
@@ -218,14 +233,7 @@ export async function redeem(recvWallet: PublicKey) {
 	// connection
 	const connection = new Connection(ENDPOINT);
 
-	// Collection owner keypair
-	if (!process.env.COLLECTION_OWNER_PRIVATE_KEY) {
-		console.log("COLLECTION_OWNER_PRIVATE_KEY not found!");
-		return;
-	}
-	const collectionOwnerKeypair = Keypair.fromSecretKey(
-		base58.decode(process.env.COLLECTION_OWNER_PRIVATE_KEY)
-	);
+	const collectionOwnerKeypair = getKeypair();
 
 	const mintPublicKey = new PublicKey(MINT);
 	const ownerPublicKey = collectionOwnerKeypair.publicKey;
