@@ -109,6 +109,8 @@ async function post(
 }
 async function getImpl(id: string): Promise<GetResponse> {
   const client = ddbClient;
+  try{
+
   const { Item } = await client.send(
     new GetItemCommand({
       TableName: "evt_participants",
@@ -119,6 +121,10 @@ async function getImpl(id: string): Promise<GetResponse> {
   );
 
   return Item as unknown as GetResponse;
+  } catch (error) {
+      
+    return;
+  }
 }
 
 async function get(
