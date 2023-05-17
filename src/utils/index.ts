@@ -339,5 +339,5 @@ export const ddbClient = new DynamoDBClient({});
 
 export const ddbTables = {
 	evt: "events",
-	evt_part: "evt_participants"
+	evt_part: "evt_participant"
 }
