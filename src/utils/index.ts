@@ -194,6 +194,21 @@ export async function isRedeemed(recvWallet: PublicKey) {
 	return false;
 }
 
+export async function getNFTFromToken(tokenAddress: PublicKey) {
+	const connection = new Connection(ENDPOINT);
+	const metaplex = new Metaplex(connection);
+
+	let nft;
+	try {
+		nft = await metaplex
+			.nfts()
+			.findByMint({ mintAddress: new PublicKey(tokenAddress) });
+	} catch (e) {
+		return "";
+	}
+	return nft
+}
+
 export async function getMintAddressOfToken(tokenAddress: PublicKey) {
 	const connection = new Connection(ENDPOINT);
 	const metaplex = new Metaplex(connection);
