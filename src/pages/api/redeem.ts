@@ -136,6 +136,7 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 	};
 }
 
+// I tihnk this file should be api/[id]/redeem.ts  cuz redemption is event specific  
 async function post(req: NextApiRequest, res: NextApiResponse) {
 	const { account } = req.body as InputData;
 

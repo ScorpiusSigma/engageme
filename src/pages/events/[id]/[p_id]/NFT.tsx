@@ -1,8 +1,9 @@
 import useWindowSize from "@/hooks/WindowResize";
-import { getNFTFromToken, getNFTOwnerWallet } from "@/utils"
+import { getNFTFromToken, getNFTOwnerWallet, isRedeemed } from "@/utils"
 import { createQR } from "@solana/pay";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import Link from "next/link";
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 
@@ -17,6 +18,7 @@ export default function PartProfile() {
     const { windowSize } = useWindowSize()
 
     const [isOwner, setIsOwner] = useState(false);
+    const [isEvtNFTClaimed, setIsEvtNFTClaimed] = useState(false);
     const [pDeets, setPDeets] = useState<any>(null);
     const [nftDeets, setNFTDeets] = useState<any>(null);
     let orgAddr = ""
@@ -29,6 +31,7 @@ export default function PartProfile() {
     useEffect(() => {
         if (!router.isReady || !publicKey) return
         const { id, p_id } = router.query;
+        checkEvtRedeemed()
         let miao = fetchParticipant(id as string, p_id as string)
         miao.then(fetchNFT)
         miao.then(setPDeets)
@@ -37,12 +40,17 @@ export default function PartProfile() {
         // }
         // setPDeets(temp)
         // fetchNFT(temp)
-        
+
     }, [router.isReady, publicKey])
+
+    const checkEvtRedeemed = async () => {
+        if (!publicKey) return;
+        setIsEvtNFTClaimed(await isRedeemed(publicKey));
+    }
 
     const fetchOrganiser = async (e_id: string) => {
         const res = await fetch(`/api/events/${e_id}`)
-        if (res.status != 200)  return null;
+        if (res.status != 200) return null;
         const data = await res.json()
         // setOrgAddr(data.organiser.S);
         orgAddr = data.orgProxy.S
@@ -56,7 +64,7 @@ export default function PartProfile() {
         const data = await res.json();
         for (const [k, v] of Object.entries(data)) {
             data[k] = Object.values(v as any)[0];
-          }
+        }
         setPDeets(data)
         console.log("fetch participant")
         console.log(data)
@@ -72,15 +80,15 @@ export default function PartProfile() {
             return;
         }
         const nft = await getNFTFromToken(part_data.evt_token_addr) as any
-        console.log("nft")
-        console.log(nft)
-        console.log(nft?.address.toString())
-        console.log(nft?.mint?.address.toString())
+        // console.log("nft")
+        // console.log(nft)
+        // console.log(nft?.address.toString())
+        // console.log(nft?.mint?.address.toString())
         setNFTDeets(nft.json)
-        
+
         // const mintAddress = nft?.collection?.address.toString();
         const owner = await getNFTOwnerWallet(token_addr)
-        console.log(`owner: ${owner} vs public key: ${publicKey}`)
+        // console.log(`owner: ${owner} vs public key: ${publicKey}`)
         if (owner == publicKey) {
             setIsOwner(true);
             await fetchOrganiser(id as string);
@@ -95,7 +103,7 @@ export default function PartProfile() {
 
     const getQrCode = async (part_data: any) => {
         // console.log(pDeets)
-        console.log("QR CODE orgAddr: ",  orgAddr)
+        console.log("QR CODE orgAddr: ", orgAddr)
         const pDeets = part_data
         let params = JSON.stringify({
             account: publicKey,
@@ -154,16 +162,26 @@ export default function PartProfile() {
                         </ReactCardFlip>
 
                         {pDeets && Object.entries(pDeets).map(([k, v]) => {
+                            if (!v || (v as string).length == 0) return
                             return (
                                 <div className="my-2">
-                                    <span>{k}: </span> <span>{v as string}</span>
+                                    {
+                                        k == "name" || k == "participant_id" ? (
+                                            <span className="mr-2">{k}:</span>
+                                        ) : (
+                                            <Link href={v as string} className=" text-my_blue  underline mr-2">{k}:</Link>
+
+                                        )
+                                    }
+                                    <span>{v as string}</span>
                                 </div>
                             )
                         })}
                     </>
                 )}
-            <WalletMultiButton/>
-            {isOwner && (
+            <WalletMultiButton />
+            {/*  Claims. For now just claiming event NFT. In future maybe can claim follow up event passes and prizes  */}
+            {isOwner && !isEvtNFTClaimed && (
                 <div></div>
             )}
         </div>

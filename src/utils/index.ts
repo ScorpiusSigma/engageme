@@ -154,6 +154,7 @@ export async function isAttendanceTaken(
 	return false;
 }
 
+// I think can use my check if nft is owner code instead of this O(n) method
 export async function isRedeemed(recvWallet: PublicKey) {
 	const connection = new Connection(ENDPOINT);
 	const metaplex = new Metaplex(connection);

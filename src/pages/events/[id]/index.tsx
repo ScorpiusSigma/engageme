@@ -39,7 +39,18 @@ export default function Event() {
       setAttenTakers([]);
       return
     }
-    setAttenTakers(await res.json())
+    let data = await res.json()
+    console.log(data)
+    data = data.map((el: any) => {
+      let toRet: { [name: string]: any } = {}
+      for (const [k, v] of Object.entries(el)) {
+        toRet[k] = Object.values(v as any)[0];
+      }
+      return toRet
+    })
+    console.log("Attendance takers")
+    console.log(data)
+    setAttenTakers(data)
   }
 
   const addAttenTaker = async () => {
@@ -252,7 +263,7 @@ export default function Event() {
             </Button>
           </div>
           <table className="w-full">
-            <thead className="w-full">
+            <thead className="w-full text-left">
               <tr>
                 <th className={tableCellStyle + " w-1/2"}>
                   Name

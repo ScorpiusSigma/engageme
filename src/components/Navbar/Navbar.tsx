@@ -24,6 +24,7 @@ export default function Navbar() {
                 />
             </div>
             <div className="flex items-center h-full">
+                <Link href={"/events"} className="mr-4 text-gray-400"> Events </Link>
                 <DarkLight />
                 <div className="border border-r-slate-300 border-solid mx-4 h-2/3" />
                 <WalletMultiButton />

@@ -74,16 +74,6 @@ export default function Events() {
 											)
 										})
 									}
-									{/* <TableCell>Name</TableCell>
-									<TableCell align="right">
-										Attendance
-									</TableCell>
-									<TableCell align="right">
-										Start Date
-									</TableCell>
-									<TableCell align="right">
-										End Date
-									</TableCell> */}
 								</TableRow>
 							</TableHead>
 							<TableBody>
