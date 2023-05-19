@@ -1,12 +1,15 @@
 import Navbar from "@/components/Navbar/Navbar";
 import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { Router, useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
 import { parseCSV } from "@/utils/csvParser";
 import events from "..";
 import * as uuid from "uuid";
+import { tableCellStyle } from "@/utils";
 
 // import { usePapaParse } from "react-papaparse";
 
@@ -22,6 +25,44 @@ export default function Event() {
   });
 
   const [participants, setPart] = useState<any[] | null>(null);
+
+  const [attenTakers, setAttenTakers] = useState<any[] | null>(null);
+  const [isAddingAT, setIsAddAT] = useState<boolean>(false);
+  const [newTaker, setNewTaker] = useState<{ taker_addr: string, name: string }>({
+    taker_addr: "",
+    name: ""
+  });
+
+  const getAttenTakers = async (e_id: string) => {
+    const res = await fetch(`/api/events/${e_id}/atten_taker`);
+    if (res.status != 200) {
+      setAttenTakers([]);
+      return
+    }
+    setAttenTakers(await res.json())
+  }
+
+  const addAttenTaker = async () => {
+    const { id } = router.query;
+    const res = await fetch(
+      `/api/events/${id}/atten_taker`, {
+      method: "POST",
+      body: JSON.stringify(newTaker),
+      headers: new Headers({
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      }
+      )
+    });
+    if (res.status != 200) {
+      // lmao lazy
+      return
+    }
+    let newTakers = attenTakers || []
+    newTakers.push(newTaker)
+    setAttenTakers(newTakers)
+    setIsAddAT(false);
+  }
 
   const uploadParticipants = async () => {
     console.log("uploadParticipants")
@@ -51,7 +92,7 @@ export default function Event() {
       }
       )
     });
-    if (res.status != 200){
+    if (res.status != 200) {
       console.log(res)
       return
     }
@@ -94,7 +135,6 @@ export default function Event() {
     data = data.map((el: any) => {
       let toRet: { [name: string]: any } = {}
       for (const [k, v] of Object.entries(el)) {
-        // if (k == "organiser") continue;
         toRet[k] = Object.values(v as any)[0];
       }
       return toRet
@@ -105,8 +145,14 @@ export default function Event() {
 
   useEffect(() => {
     if (!router.isReady) return;
+    const { id } = router.query;
+    if (!id) {
+      router.push("/events");
+      return;
+    }
     fetchEventById();
     fetchParticipantsByEvent();
+    getAttenTakers(id as string);
   }, [router.isReady]);
 
   return (
@@ -155,7 +201,6 @@ export default function Event() {
               )}
             </div>
           </div>
-          {/* table */}
           {participants != null && participants.length > 0 ? (
             <Table className="">
               <TableHead className="">
@@ -196,6 +241,81 @@ export default function Event() {
               No participants present yet!
             </div>
           )}
+
+        </div>
+
+        <div className=" rounded-lg bg-white mt-4 shadow-md p-4">
+          <div className="mb-4 flex justify-between  ">
+            <div className=" text-xl font-semibold">Attendance Takers</div>
+            <Button onClick={() => { setIsAddAT(true) }}>
+              <AddCircleOutlineIcon />
+            </Button>
+          </div>
+          <table className="w-full">
+            <thead className="w-full">
+              <tr>
+                <th className={tableCellStyle + " w-1/2"}>
+                  Name
+                </th>
+                <th className={tableCellStyle + " w-1/2"}>
+                  Public Address
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {attenTakers && attenTakers.length > 0 ? (
+                <>
+                  {
+                    attenTakers.map(({ name, taker_addr }, idx) => (
+                      <tr key={idx}>
+                        <td className={tableCellStyle}>
+                          {name}
+                        </td>
+                        <td className={tableCellStyle}>
+                          {taker_addr}
+                        </td>
+                      </tr>
+                    ))
+                  }
+                </>
+              ) :
+                !isAddingAT && (
+                  <div className={tableCellStyle + "border-none"}>
+                    There are no attendance takers yet ;)
+                  </div>
+                )
+              }
+
+              {isAddingAT && (
+                <tr className=" relative ">
+                  <td className={tableCellStyle + " w-1/2"}>
+                    <TextField name="Taker Name" value={newTaker?.name} onChange={(e) => {
+                      const val = e.target.value
+                      setNewTaker({
+                        ...newTaker,
+                        name: val
+                      })
+                    }} />
+                  </td>
+                  <td className={tableCellStyle + " w-1/2"}>
+                    <TextField name="Taker Address" value={newTaker?.taker_addr} onChange={(e) => {
+                      const val = e.target.value
+                      setNewTaker({
+                        ...newTaker,
+                        taker_addr: val
+                      })
+                    }} />
+                  </td>
+                  <div className=" flex absolute right-0 top-6">
+                    <Button variant="outlined" onClick={addAttenTaker}> Confirm </Button>
+                    <Button variant="outlined" onClick={() => {
+                      setIsAddAT(false)
+                    }}> <CancelIcon /></Button>
+                  </div>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

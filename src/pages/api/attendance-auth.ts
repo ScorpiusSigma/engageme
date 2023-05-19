@@ -63,6 +63,7 @@ async function post(
 	res: NextApiResponse<PostResponse | PostError>
 ) {
 	const { account } = req.body as InputData;
+	console.log(`account: ${account}`)
 	const { mintAccount, orgAccount, hash, wallet, token } = req.query;
 
 	if (!account) {
@@ -109,6 +110,7 @@ async function post(
 			new PublicKey(wallet),
 			new PublicKey(token)
 		);
+		console.log(`${hash} vs ${hashChecker}`)
 
 		if (hash === hashChecker && (await isRedeemed(new PublicKey(wallet)))) {
 			const response = await takeAttendance(
@@ -132,6 +134,7 @@ export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse<GetResponse | PostResponse | PostError>
 ) {
+	console.log("Attendance auth")
 	if (req.method === "GET") {
 		return get(res);
 	} else if (req.method === "POST") {

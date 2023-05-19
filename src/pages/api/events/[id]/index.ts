@@ -1,4 +1,4 @@
-import { ddbClient } from "@/utils";
+import { ddbClient, ddbTables } from "@/utils";
 import { GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { NextApiRequest, NextApiResponse } from "next";
 type GetResponse = {
@@ -39,7 +39,7 @@ async function getImpl(id: string): Promise<PostResponse> {
   const client = ddbClient;
   const { Item } = await client.send(
     new GetItemCommand({
-      TableName: "events",
+      TableName: ddbTables.evt,
       Key: {
         evnet_id: { S: id }
       },

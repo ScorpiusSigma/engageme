@@ -20,6 +20,8 @@ export default function PartProfile() {
     const [isOwner, setIsOwner] = useState(false);
     const [pDeets, setPDeets] = useState<any>(null);
     const [nftDeets, setNFTDeets] = useState<any>(null);
+    let orgAddr = ""
+    // const [orgAddr, setOrgAddr] = useState<string>("");
 
     const [isImgFlip, setImgFlip] = useState(false)
     const [status, setStatus] = useState<string>();
@@ -30,11 +32,20 @@ export default function PartProfile() {
         const { id, p_id } = router.query;
         // fetchParticipant(id as string, p_id as string).then(fetchNFT)
         const temp = {
-            evt_token_addr: "Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm"
+            evt_token_addr: "9pBcndZY6cbXSCqHemnmL3Aj74QERh4E2GdcMaDQz3GM",//"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm"
         }
         setPDeets(temp)
         fetchNFT(temp)
+        
     }, [router.isReady, publicKey])
+
+    const fetchOrganiser = async (e_id: string) => {
+        const res = await fetch(`/api/events/${e_id}`)
+        if (res.status != 200)  return null;
+        const data = await res.json()
+        // setOrgAddr(data.organiser.S);
+        orgAddr = data.organiser.S
+    }
 
     const fetchParticipant = async (e_id: string, p_id: string) => {
         const res = await fetch(`/api/events/${e_id}/${p_id}`)
@@ -47,6 +58,7 @@ export default function PartProfile() {
     }
 
     const fetchNFT = async (part_data: any) => {
+        const { id } = router.query;
         console.log("Fetch nft")
         console.log(part_data)
         const nft = await getNFTFromToken(part_data.evt_token_addr) as any
@@ -56,6 +68,7 @@ export default function PartProfile() {
         console.log(`mintAddress: ${mintAddress}`)
         // if (mintAddress == publicKey) {
         setIsOwner(true);
+        await fetchOrganiser(id as string);
         getQrCode(part_data)
         // }
     }
@@ -67,11 +80,12 @@ export default function PartProfile() {
 
     const getQrCode = async (part_data: any) => {
         // console.log(pDeets)
+        console.log("QR CODE orgAddr: ",  orgAddr)
         const pDeets = part_data
         let params = JSON.stringify({
             account: publicKey,
             token: pDeets.evt_token_addr,
-            orgAccount: publicKey,
+            orgAccount: orgAddr,
         });
         console.log(params);
 
@@ -88,9 +102,10 @@ export default function PartProfile() {
             return;
         }
         const { qrcode } = await res.json();
+        console.log("qrcode")
         console.log(qrcode);
         // 2 - Generate a QR Code from the URL and generate a blob
-        const qr = createQR(qrcode);
+        const qr = createQR(`solana:${qrcode}`);
         const qrBlob = await qr.getRawData("png");
         if (!qrBlob) return;
         // 3 - Convert the blob to a base64 string (using FileReader) and set the QR code state
@@ -119,9 +134,7 @@ export default function PartProfile() {
                                 src={qrCode}
                                 style={{ position: "relative", background: "white" }}
                                 alt="QR Code"
-                                // width={"50%"}
                                 height={(windowSize.height || 100) / 2}
-                                // priority
                             />
                         </ReactCardFlip>
 

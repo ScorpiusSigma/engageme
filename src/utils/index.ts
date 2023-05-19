@@ -64,7 +64,7 @@ export const generateQrCodeLink = (
 	orgAccount: PublicKey
 ): string => {
 	const hash = createHashAuth(walletAddress, tokenAddress);
-	return `${host}/api/attendace-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${orgAccount}`;
+	return `${host}/api/attendance-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${orgAccount}`;
 };
 
 export const isValidWallet = (wallet: PublicKey) => {
@@ -362,5 +362,8 @@ export const ddbClient = new DynamoDBClient({});
 
 export const ddbTables = {
 	evt: "events",
-	evt_part: "evt_participant"
+	evt_part: "evt_participant",
+	atten: "evt_attendance_taker"
 }
+
+export const tableCellStyle  = " p-4 border-b border-gray-200 text-left "
