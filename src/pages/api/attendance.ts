@@ -206,6 +206,7 @@ export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse<GetResponse | PostResponse | PostError>
 ) {
+	console.log("Attendance")
 	if (req.method === "POST") {
 		return await post(req, res);
 	} else {

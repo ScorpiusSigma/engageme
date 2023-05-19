@@ -1,4 +1,4 @@
-import { ddbClient } from "@/utils";
+import { ddbClient, ddbTables } from "@/utils";
 import { GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -16,7 +16,7 @@ const getParticipant = async (e_id: string, p_id: string) => {
     const client = ddbClient;
     const { Item } = await client.send(
         new GetItemCommand({
-            TableName: "evt_participants",
+            TableName: ddbTables.evt_part,
             Key: {
                 event_id: { S: e_id },
                 participant_id: { S: p_id },
@@ -39,6 +39,8 @@ async function get(
     req: NextApiRequest,
     res: NextApiResponse<GetResponse | GetError>
 ) {
+    console.log("req.query")
+    console.log(req.query)
     const { id, p_id } = req.query; // Retrieve the square bracket param
 
     console.log(`id: ${id}, p_id: ${p_id}`);

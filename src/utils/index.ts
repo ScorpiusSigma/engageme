@@ -194,6 +194,22 @@ export async function isRedeemed(recvWallet: PublicKey) {
 	return false;
 }
 
+export async function getNFTOwnerWallet(tokenAddress: PublicKey) {
+	const connection = new Connection(ENDPOINT);
+	const tokenMint = tokenAddress;
+	const largestAccounts = await connection.getTokenLargestAccounts(
+		new PublicKey(tokenMint)
+	);
+	const largestAccountInfo = await connection.getParsedAccountInfo(
+		largestAccounts.value[0].address
+	);
+	console.log("largestAccountInfo")
+	console.log(largestAccountInfo)
+	let owner = (largestAccountInfo?.value?.data as any).parsed.info.owner;
+	console.log(owner);
+	return owner
+}
+
 export async function getNFTFromToken(tokenAddress: PublicKey) {
 	const connection = new Connection(ENDPOINT);
 	const metaplex = new Metaplex(connection);
@@ -366,4 +382,4 @@ export const ddbTables = {
 	atten: "evt_attendance_taker"
 }
 
-export const tableCellStyle  = " p-4 border-b border-gray-200 text-left "
+export const tableCellStyle = " p-4 border-b border-gray-200 text-left "

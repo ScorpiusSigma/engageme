@@ -1,9 +1,8 @@
 import useWindowSize from "@/hooks/WindowResize";
-import { getMintAddressOfToken, getNFTFromToken } from "@/utils"
+import { getNFTFromToken, getNFTOwnerWallet } from "@/utils"
 import { createQR } from "@solana/pay";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletConnectButton, WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { WalletConnectWalletAdapter } from "@solana/wallet-adapter-wallets";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 
@@ -30,12 +29,14 @@ export default function PartProfile() {
     useEffect(() => {
         if (!router.isReady || !publicKey) return
         const { id, p_id } = router.query;
-        // fetchParticipant(id as string, p_id as string).then(fetchNFT)
-        const temp = {
-            evt_token_addr: "9pBcndZY6cbXSCqHemnmL3Aj74QERh4E2GdcMaDQz3GM",//"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm"
-        }
-        setPDeets(temp)
-        fetchNFT(temp)
+        let miao = fetchParticipant(id as string, p_id as string)
+        miao.then(fetchNFT)
+        miao.then(setPDeets)
+        // const temp = {
+        //     evt_token_addr: "9pBcndZY6cbXSCqHemnmL3Aj74QERh4E2GdcMaDQz3GM",//"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm"
+        // }
+        // setPDeets(temp)
+        // fetchNFT(temp)
         
     }, [router.isReady, publicKey])
 
@@ -44,7 +45,7 @@ export default function PartProfile() {
         if (res.status != 200)  return null;
         const data = await res.json()
         // setOrgAddr(data.organiser.S);
-        orgAddr = data.organiser.S
+        orgAddr = data.orgProxy.S
     }
 
     const fetchParticipant = async (e_id: string, p_id: string) => {
@@ -53,7 +54,12 @@ export default function PartProfile() {
             return null
         }
         const data = await res.json();
+        for (const [k, v] of Object.entries(data)) {
+            data[k] = Object.values(v as any)[0];
+          }
         setPDeets(data)
+        console.log("fetch participant")
+        console.log(data)
         return data
     }
 
@@ -61,16 +67,25 @@ export default function PartProfile() {
         const { id } = router.query;
         console.log("Fetch nft")
         console.log(part_data)
+        let token_addr = part_data?.evt_token_addr
+        if (!token_addr) {
+            return;
+        }
         const nft = await getNFTFromToken(part_data.evt_token_addr) as any
+        console.log("nft")
         console.log(nft)
+        console.log(nft?.address.toString())
+        console.log(nft?.mint?.address.toString())
         setNFTDeets(nft.json)
-        const mintAddress = nft?.collection?.address.toString();
-        console.log(`mintAddress: ${mintAddress}`)
-        // if (mintAddress == publicKey) {
-        setIsOwner(true);
-        await fetchOrganiser(id as string);
-        getQrCode(part_data)
-        // }
+        
+        // const mintAddress = nft?.collection?.address.toString();
+        const owner = await getNFTOwnerWallet(token_addr)
+        console.log(`owner: ${owner} vs public key: ${publicKey}`)
+        if (owner == publicKey) {
+            setIsOwner(true);
+            await fetchOrganiser(id as string);
+            getQrCode(part_data)
+        }
     }
 
     const flipCard = () => {
