@@ -1,5 +1,14 @@
 import Navbar from "@/components/Navbar/Navbar";
-import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
+import {
+	Button,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
+	TextField,
+} from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -14,17 +23,17 @@ import { tableCellStyle } from "@/utils";
 // import { usePapaParse } from "react-papaparse";
 
 export default function Event() {
-  const router = useRouter();
+	const router = useRouter();
 
-  const [file, setFile] = useState<File | null>();
+	const [file, setFile] = useState<File | null>();
 
-  const [evtDeets, setEvtDeets] = useState<any>({
-    name: "Solana Hackathon",
-    startDate: "20/5/23",
-    endDate: "27/5/23",
-  });
+	const [evtDeets, setEvtDeets] = useState<any>({
+		name: "Solana Hackathon",
+		startDate: "20/5/23",
+		endDate: "27/5/23",
+	});
 
-  const [participants, setPart] = useState<any[] | null>(null);
+	const [participants, setPart] = useState<any[] | null>(null);
 
   const [attenTakers, setAttenTakers] = useState<any[] | null>(null);
   const [isAddingAT, setIsAddAT] = useState<boolean>(false);
@@ -111,27 +120,27 @@ export default function Event() {
     setFile(null);
   }
 
-  const fetchEventById = async () => {
-    const { id } = router.query;
-    console.log(`id: ${id}`);
-    const res = await fetch(`/api/events/${id}`);
-    if (res.status != 200) {
-      setEvtDeets({
-        name: "Event not found!",
-        startDate: "-",
-        endDate: "-",
-      });
-      return;
-    }
-    let data = await res.json();
-    console.log(data)
-    Object.entries(data).map(([k, v]) => {
-      if (k == "organiser") delete data[k];
-      data[k] = Object.values(v as any)[0];
-    })
-    console.log(data)
-    setEvtDeets(data);
-  };
+	const fetchEventById = async () => {
+		const { id } = router.query;
+		console.log(`id: ${id}`);
+		const res = await fetch(`/api/events/${id}`);
+		if (res.status != 200) {
+			setEvtDeets({
+				name: "Event not found!",
+				startDate: "-",
+				endDate: "-",
+			});
+			return;
+		}
+		let data = await res.json();
+		console.log(data);
+		Object.entries(data).map(([k, v]) => {
+			if (k == "organiser") delete data[k];
+			data[k] = Object.values(v as any)[0];
+		});
+		console.log(data);
+		setEvtDeets(data);
+	};
 
   const fetchParticipantsByEvent = async () => {
     const { id } = router.query;
