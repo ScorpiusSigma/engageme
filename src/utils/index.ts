@@ -76,6 +76,15 @@ export async function takeAttendance(
 	userAccount: PublicKey,
 	orgAccount: PublicKey
 ) {
+	// TODO: Jun Leong
+	// Check if the attendaceTakerAccount is a whitelisted wallet
+	// example:
+	// if (!isValidAttendanceTaker(attendaceTakerAccount)) {
+	// 	return {
+	// 		error: "Attedance Taker is not using a valid wallet! Please contact organiser",
+	// 	};
+	// }
+
 	// Fetch the recent blockhash
 	const connection = new Connection(ENDPOINT);
 	const recentBlockhash = await connection.getLatestBlockhash();
@@ -204,11 +213,11 @@ export async function getNFTOwnerWallet(tokenAddress: PublicKey) {
 	const largestAccountInfo = await connection.getParsedAccountInfo(
 		largestAccounts.value[0].address
 	);
-	console.log("largestAccountInfo")
-	console.log(largestAccountInfo)
+	console.log("largestAccountInfo");
+	console.log(largestAccountInfo);
 	let owner = (largestAccountInfo?.value?.data as any).parsed.info.owner;
 	console.log(owner);
-	return owner
+	return owner;
 }
 
 export async function getNFTFromToken(tokenAddress: PublicKey) {
@@ -223,7 +232,7 @@ export async function getNFTFromToken(tokenAddress: PublicKey) {
 	} catch (e) {
 		return "";
 	}
-	return nft
+	return nft;
 }
 
 export async function getMintAddressOfToken(tokenAddress: PublicKey) {
@@ -258,8 +267,17 @@ const getKeypair = (): Keypair => {
 	return keypair;
 };
 
-export async function redeem(recvWallet: PublicKey) {
+export async function redeem(
+	e_id: string,
+	uuid: string,
+	recvWallet: PublicKey
+) {
 	// This will be the token address of the NFT
+	// get mint address from uuid
+	// TODO: Jun Leong
+	// Get nft mint address with e_id and uuid
+	// example code: const MINT = await (e_id, uuid)
+	// This means you will remove the line below
 	const MINT = "Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
 
 	// connection
@@ -334,19 +352,22 @@ export function getAttendanceMetric() {
 					const blockTime = transaction.blockTime;
 
 					if (blockTime) {
-						const receivingTokenAccount =
-							transaction.transaction.message.instructions[0]
-								?.parsed?.info?.destination;
+						const receivingTokenAccount = (
+							transaction.transaction.message
+								.instructions[0] as any
+						)?.parsed?.info?.destination;
 
 						if (!receivingTokenAccount) {
 							continue;
 						}
 
 						const receivingTokenAccountInfo = (
-							await connection.getParsedAccountInfo(
-								new PublicKey(receivingTokenAccount)
-							)
-						)?.value?.data?.parsed?.info?.owner;
+							(
+								await connection.getParsedAccountInfo(
+									new PublicKey(receivingTokenAccount)
+								)
+							)?.value?.data as any
+						)?.parsed?.info?.owner;
 
 						if (!receivingTokenAccountInfo) {
 							continue;
@@ -374,13 +395,12 @@ export function getAttendanceMetric() {
 	return metric;
 }
 
-
 export const ddbClient = new DynamoDBClient({});
 
 export const ddbTables = {
 	evt: "events",
 	evt_part: "evt_participant",
-	atten: "evt_attendance_taker"
-}
+	atten: "evt_attendance_taker",
+};
 
-export const tableCellStyle = " p-4 border-b border-gray-200 text-left "
+export const tableCellStyle = " p-4 border-b border-gray-200 text-left ";
