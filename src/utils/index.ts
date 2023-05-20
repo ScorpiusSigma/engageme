@@ -335,18 +335,17 @@ export function getAttendanceMetric() {
 
 					if (blockTime) {
 						const receivingTokenAccount =
-							transaction.transaction.message.instructions[0]
-								?.parsed?.info?.destination;
+							(transaction.transaction.message.instructions[0] as any).parsed?.info?.destination;
 
 						if (!receivingTokenAccount) {
 							continue;
 						}
 
-						const receivingTokenAccountInfo = (
+						const receivingTokenAccountInfo = ((
 							await connection.getParsedAccountInfo(
 								new PublicKey(receivingTokenAccount)
 							)
-						)?.value?.data?.parsed?.info?.owner;
+						)?.value?.data as any).parsed?.info?.owner;
 
 						if (!receivingTokenAccountInfo) {
 							continue;
