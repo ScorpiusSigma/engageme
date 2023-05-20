@@ -1,11 +1,18 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { clusterApiUrl, Connection, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import {
+	clusterApiUrl,
+	Connection,
+	PublicKey,
+	SystemProgram,
+	Transaction,
+} from "@solana/web3.js";
 import {
 	createHashAuth,
 	ENDPOINT,
 	generateQrCodeLink,
 	getBaseUrl,
 	getMintAddressOfToken,
+	ORG_ACCOUNT,
 } from "@/utils";
 import { Metaplex } from "@metaplex-foundation/js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
@@ -28,7 +35,6 @@ type InputData = {
 	wallet: string;
 	token: string;
 	mintAccount: string;
-	orgAccount: string;
 };
 
 type GetResponse = {
@@ -51,7 +57,7 @@ function get(res: NextApiResponse<GetResponse>) {
 	});
 }
 
-async function takeAttendance(userAccount: PublicKey, orgAccount: PublicKey) {
+async function takeAttendance(userAccount: PublicKey) {
 	// Fetch the recent blockhash
 	const connection = new Connection(ENDPOINT);
 	const recentBlockhash = await connection.getLatestBlockhash();
@@ -59,14 +65,14 @@ async function takeAttendance(userAccount: PublicKey, orgAccount: PublicKey) {
 	// Create a transaction instruction with a 0-lamport transfer
 	const instruction = SystemProgram.transfer({
 		fromPubkey: userAccount,
-		toPubkey: orgAccount,
+		toPubkey: new PublicKey(ORG_ACCOUNT),
 		lamports: 0,
 	});
 
 	// Create a transaction with the instruction
 	const transaction = new Transaction().add(instruction);
 	transaction.recentBlockhash = recentBlockhash.blockhash;
-	transaction.feePayer = orgAccount;
+	transaction.feePayer = new PublicKey(ORG_ACCOUNT);
 
 	const serializedTransaction = transaction.serialize({
 		requireAllSignatures: false,
@@ -81,10 +87,7 @@ async function takeAttendance(userAccount: PublicKey, orgAccount: PublicKey) {
 	}; // User has an NFT from the desired collection
 }
 
-async function isAttendanceTaken(
-	userAccount: PublicKey,
-	orgAccount: PublicKey
-) {
+async function isAttendanceTaken(userAccount: PublicKey) {
 	const LIMIT = 15;
 	const connection = new Connection(ENDPOINT);
 	const recentBlockhash = await connection.getLatestBlockhash();
@@ -116,7 +119,9 @@ async function isAttendanceTaken(
 							 * Needs a better way to check if this transaction is attendance taking.
 							 * Right now the check is just checking if the fee payer is the orgniser
 							 * */
-							recipientPublicKey.feePayer?.equals(orgAccount) &&
+							recipientPublicKey.feePayer?.equals(
+								new PublicKey(ORG_ACCOUNT)
+							) &&
 							isToday(transactionTime)
 						) {
 							return true;
@@ -142,7 +147,7 @@ function isToday(date: Date): boolean {
 	);
 }
 
-function createHashKey(orgAccount: PublicKey): string {
+function createHashKey(): string {
 	const today = new Date();
 	const dateString =
 		today.getDate() +
@@ -151,24 +156,18 @@ function createHashKey(orgAccount: PublicKey): string {
 		"" +
 		today.getFullYear() +
 		"" +
-		orgAccount.toString(); // Convert date to string
+		ORG_ACCOUNT.toString(); // Convert date to string
 	const hash = createHash("sha256"); // Create SHA-256 hash object
 	hash.update(dateString); // Update the hash with the string
 	return hash.digest("hex"); // Get the hexadecimal representation of the hash
 }
 
-
 async function post(
 	req: NextApiRequest,
 	res: NextApiResponse<PostResponse | PostError>
 ) {
-	console.log(req.body)
-	const { account, token, orgAccount } = req.body as InputData;
-	console.log(`Account: ${account} token: ${token} orgAccount: ${orgAccount}`)
-	if (!orgAccount) {
-		res.status(400).json({ error: "No organizer account provided" });
-		return;
-	}
+	console.log(req.body);
+	const { account, token } = req.body as InputData;
 
 	if (!account) {
 		res.status(400).json({ error: "No wallet provided" });
@@ -186,10 +185,7 @@ async function post(
 				getBaseUrl(req),
 				new PublicKey(account),
 				new PublicKey(token),
-				new PublicKey(
-					await getMintAddressOfToken(new PublicKey(token))
-				),
-				new PublicKey(orgAccount)
+				new PublicKey(await getMintAddressOfToken(new PublicKey(token)))
 			),
 		};
 
@@ -206,7 +202,7 @@ export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse<GetResponse | PostResponse | PostError>
 ) {
-	console.log("Attendance")
+	console.log("Attendance");
 	if (req.method === "POST") {
 		return await post(req, res);
 	} else {

@@ -60,11 +60,10 @@ export const generateQrCodeLink = (
 	host: string,
 	walletAddress: PublicKey,
 	tokenAddress: PublicKey,
-	mintAccount: PublicKey,
-	orgAccount: PublicKey
+	mintAccount: PublicKey
 ): string => {
 	const hash = createHashAuth(walletAddress, tokenAddress);
-	return `${host}/api/attendance-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${orgAccount}`;
+	return `${host}/api/attendance-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${ORG_ACCOUNT}`;
 };
 
 export const isValidWallet = (wallet: PublicKey) => {
@@ -73,8 +72,7 @@ export const isValidWallet = (wallet: PublicKey) => {
 
 export async function takeAttendance(
 	attendaceTakerAccount: PublicKey,
-	userAccount: PublicKey,
-	orgAccount: PublicKey
+	userAccount: PublicKey
 ) {
 	// TODO: Jun Leong
 	// Check if the attendaceTakerAccount is a whitelisted wallet
@@ -99,7 +97,7 @@ export async function takeAttendance(
 	// Create a transaction with the instruction
 	const transaction = new Transaction().add(instruction);
 	transaction.recentBlockhash = recentBlockhash.blockhash;
-	transaction.feePayer = orgAccount;
+	transaction.feePayer = new PublicKey(ORG_ACCOUNT);
 
 	transaction.partialSign(getKeypair());
 
@@ -116,10 +114,7 @@ export async function takeAttendance(
 	};
 }
 
-export async function isAttendanceTaken(
-	userAccount: PublicKey,
-	orgAccount: PublicKey
-) {
+export async function isAttendanceTaken(userAccount: PublicKey) {
 	const LIMIT = 15;
 	const connection = new Connection(ENDPOINT);
 
@@ -150,7 +145,9 @@ export async function isAttendanceTaken(
 							 * TODO: Needs a better way to check if this transaction is attendance taking.
 							 * Right now the check is just checking if the fee payer is the orgniser
 							 * */
-							recipientPublicKey.feePayer?.equals(orgAccount) &&
+							recipientPublicKey.feePayer?.equals(
+								new PublicKey(ORG_ACCOUNT)
+							) &&
 							isToday(transactionTime)
 						) {
 							return true;
