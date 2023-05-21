@@ -461,6 +461,55 @@ export function getAttendanceMetric() {
 	return metric;
 }
 
+export const airdrop = async (recvWallets: PublicKey[]) => {
+	const connection = new Connection(ENDPOINT);
+	const collectionOwnerKeypair = getKeypair();
+
+	// For Jun Leong: This is the nft address, it should be different for each transfer
+	const MINT = "Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm"; // (await getTokenAddrFromDB(e_id, p_id)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
+
+	const mintPublicKey = new PublicKey(MINT);
+	const ownerPublicKey = collectionOwnerKeypair.publicKey;
+
+	for (const recvWallet of recvWallets) {
+		const destPublicKey = recvWallet;
+
+		const senderTokenAccount = await getOrCreateAssociatedTokenAccount(
+			connection,
+			collectionOwnerKeypair,
+			mintPublicKey,
+			ownerPublicKey
+		);
+
+		const receiverTokenAccount = await getOrCreateAssociatedTokenAccount(
+			connection,
+			collectionOwnerKeypair,
+			mintPublicKey,
+			destPublicKey
+		);
+
+		const instruction = createTransferInstruction(
+			senderTokenAccount.address,
+			receiverTokenAccount.address,
+			ownerPublicKey,
+			1,
+			[collectionOwnerKeypair]
+		);
+
+		const transaction = new Transaction().add(instruction);
+
+		const res = await sendAndConfirmTransaction(
+			connection,
+			transaction,
+			[collectionOwnerKeypair],
+			{ commitment: "finalized" }
+		);
+
+		const message = `NFT of ${mintPublicKey} has been transferred to ${receiverTokenAccount.address}`;
+		console.log(message);
+	}
+};
+
 export const ddbClient = new DynamoDBClient({});
 
 export const ddbTables = {
