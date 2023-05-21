@@ -18,7 +18,7 @@ import Papa from "papaparse";
 import { parseCSV } from "@/utils/csvParser";
 import events from "..";
 import * as uuid from "uuid";
-import { tableCellStyle } from "@/utils";
+import { getUnclaimedNfts, tableCellStyle } from "@/utils";
 
 // import { usePapaParse } from "react-papaparse";
 
@@ -86,11 +86,18 @@ export default function Event() {
 
   const uploadParticipants = async () => {
     console.log("uploadParticipants")
+    const { id } = router.query;
     if (file == null || file == undefined) {
       return;
     }
-    // const test = usePapaParse();
+    const availTokens = await getUnclaimedNfts(id as string);
+
+
     var data = await parseCSV(file) as any[];
+
+    if (availTokens == null || availTokens.length < data.length){
+      // setStat
+    }
     for (let i = 0; i < data.length; i++) {
       let cur = data[i]
       if ('name' in cur && (cur['name'] == undefined || cur['name'].length == 0)) {
@@ -98,10 +105,9 @@ export default function Event() {
         continue
       }
       data[i]['participant_id'] = uuid.v4()
+      data[i]['evt_token_addr'] = availTokens[i]
     }
     console.log(data);
-
-    const { id } = router.query;
     const res = await fetch(
       `/api/events/${id}/participants`, {
       method: "POST",

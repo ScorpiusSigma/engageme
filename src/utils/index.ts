@@ -154,6 +154,35 @@ export async function isAttendanceTaken(
 	return false;
 }
 
+export async function getUnclaimedNfts(e_id: string){
+	// get orgProxy by e_id first
+
+	let res = await fetch(`/api/events/${e_id}/get_org_proxy`);
+	if (res.status != 200){
+		return null
+	}
+	const orgProxy: PublicKey = (await res.json()).orgProxy;
+
+	return await getNftsOfWallet(orgProxy)
+}
+
+export async function getNftsOfWallet(wallet: PublicKey){
+	const connection = new Connection(ENDPOINT);
+	const metaplex = new Metaplex(connection);
+
+	// 1. Fetch the user's token accounts
+	const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+		wallet,
+		{
+			programId: TOKEN_PROGRAM_ID,
+		}
+	);
+	let tokenAddrs = tokenAccounts.value.map(({account}) => {
+		return account.data.parsed.info.mint;
+	})
+	return tokenAddrs;
+}
+
 // I think can use my check if nft is owner code instead of this O(n) method
 export async function isRedeemed(recvWallet: PublicKey) {
 	const connection = new Connection(ENDPOINT);
