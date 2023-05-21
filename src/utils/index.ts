@@ -63,7 +63,7 @@ export const generateQrCodeLink = (
 	mintAccount: PublicKey
 ): string => {
 	const hash = createHashAuth(walletAddress, tokenAddress);
-	return `${host}/api/attendance-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${ORG_ACCOUNT}`;
+	return "solana:" + encodeURIComponent(`${host}/api/attendance-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${ORG_ACCOUNT}`);
 };
 
 export const isValidWallet = (wallet: PublicKey) => {
