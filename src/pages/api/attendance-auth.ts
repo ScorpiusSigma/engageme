@@ -63,8 +63,8 @@ async function post(
 	res: NextApiResponse<PostResponse | PostError>
 ) {
 	const { account } = req.body as InputData;
-	console.log(`account: ${account}`)
-	const { mintAccount, orgAccount, hash, wallet, token } = req.query;
+	console.log(`account: ${account}`);
+	const { mintAccount, hash, wallet, token } = req.query;
 
 	if (!account) {
 		res.status(400).json({ error: "No account provided" });
@@ -73,11 +73,6 @@ async function post(
 
 	if (!mintAccount) {
 		res.status(400).json({ error: "No token account provided" });
-		return;
-	}
-
-	if (!orgAccount) {
-		res.status(400).json({ error: "No organiser account provided" });
 		return;
 	}
 
@@ -96,12 +91,7 @@ async function post(
 		return;
 	}
 
-	if (
-		await isAttendanceTaken(
-			new PublicKey(wallet),
-			new PublicKey(orgAccount)
-		)
-	) {
+	if (await isAttendanceTaken(new PublicKey(wallet))) {
 		res.status(500).json({ error: "Attendance is already taken!" });
 	}
 
@@ -110,13 +100,12 @@ async function post(
 			new PublicKey(wallet),
 			new PublicKey(token)
 		);
-		console.log(`${hash} vs ${hashChecker}`)
+		console.log(`${hash} vs ${hashChecker}`);
 
 		if (hash === hashChecker && (await isRedeemed(new PublicKey(wallet)))) {
 			const response = await takeAttendance(
 				new PublicKey(account),
-				new PublicKey(wallet),
-				new PublicKey(orgAccount)
+				new PublicKey(wallet)
 			);
 			res.status(200).json(response);
 			return;
@@ -134,7 +123,7 @@ export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse<GetResponse | PostResponse | PostError>
 ) {
-	console.log("Attendance auth")
+	console.log("Attendance auth");
 	if (req.method === "GET") {
 		return get(res);
 	} else if (req.method === "POST") {
