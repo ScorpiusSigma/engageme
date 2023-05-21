@@ -3,6 +3,7 @@ import { getNFTFromToken, getNFTOwnerWallet, isRedeemed } from "@/utils";
 import { createQR } from "@solana/pay";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -65,6 +66,7 @@ export default function PartProfile() {
 			return null;
 		}
 		const data = await res.json();
+		console.log("res", data);
 		for (const [k, v] of Object.entries(data)) {
 			data[k] = Object.values(v as any)[0];
 		}
@@ -100,8 +102,55 @@ export default function PartProfile() {
 	};
 
 	const flipCard = () => {
-		if (!isOwner) return;
+		if (!isOwner) {
+			console.log("You are not the owner");
+			return;
+		}
+
 		setImgFlip(!isImgFlip);
+	};
+
+	const getSocialsIcon = (social: string) => {
+		switch (social) {
+			case "github":
+				return (
+					<Image
+						src={"/github_icon.png"}
+						alt="Github Logo"
+						width={50}
+						height={50}
+					/>
+				);
+			case "insta":
+				return (
+					<Image
+						src={"/instagram_icon.png"}
+						alt="Github Logo"
+						width={50}
+						height={50}
+					/>
+				);
+			case "linkedin":
+				return (
+					<Image
+						src={"/linkedin_icon.png"}
+						alt="Github Logo"
+						width={50}
+						height={50}
+					/>
+				);
+			case "twitter":
+				return (
+					<Image
+						src={"/twitter_icon.png"}
+						alt="Github Logo"
+						width={50}
+						height={50}
+					/>
+				);
+			default:
+				break;
+		}
 	};
 
 	const getQrCode = async (part_data: any) => {
@@ -145,55 +194,60 @@ export default function PartProfile() {
 	};
 
 	return (
-		<div className=" flex justify-center items-center h-screen w-full flex-col">
+		<div className="flex justify-center items-center h-screen w-full flex-col">
 			{!publicKey && <div className="mb-4">Please connect first! </div>}
 			{publicKey && nftDeets && (
 				<>
-					<ReactCardFlip
-						isFlipped={isImgFlip}
-						flipDirection="horizontal"
-						key="front"
-					>
-						<img
-							src={nftDeets.image}
-							className="rounded-3xl"
-							style={{
-								height: (windowSize.height || 100) / 2,
-							}}
-							onClick={flipCard}
-						/>
-						<img
-							key="back"
-							onClick={flipCard}
-							src={qrCode}
-							style={{
-								position: "relative",
-								background: "white",
-							}}
-							alt="QR Code"
-							height={(windowSize.height || 100) / 2}
-						/>
-					</ReactCardFlip>
-
-					{pDeets &&
-						Object.entries(pDeets).map(([k, v]) => {
-							if (!v || (v as string).length == 0) return;
-							return (
-								<div className="my-2">
-									{k == "name" || k == "participant_id" ? (
-										<span className="mr-2">{k}:</span>
-									) : (
-										<Link
-											href={v as string}
-											className=" text-my_blue  underline mr-2"
-										>
-											{k}:
-										</Link>
-									)}
-									<span>{v as string}</span>
-								</div>
-							);
-						})}
+					<div className="px-10 py-2">
+						<ReactCardFlip
+							isFlipped={isImgFlip}
+							flipDirection="horizontal"
+							key="front"
+						>
+							<img
+								src={nftDeets.image}
+								className="rounded-3xl"
+								onClick={flipCard}
+							/>
+							<img
+								key="back"
+								onClick={flipCard}
+								src={qrCode}
+								style={{
+									position: "relative",
+									background: "white",
+								}}
+								alt="QR Code"
+								height={(windowSize.height || 100) / 2}
+							/>
+						</ReactCardFlip>
+					</div>
+					<div>
+						<p className="font-bold text-2xl">{pDeets.name}</p>
+					</div>
+					<div className="flex flex-row gap-2 pt-2">
+						{pDeets &&
+							Object.entries(pDeets).map(([k, v]) => {
+								if (
+									!v ||
+									(v as string).length == 0 ||
+									!(v as string).includes("http")
+								)
+									return;
+								return (
+									<div className="my-2">
+										{
+											<Link
+												href={v as string}
+												className=" text-my_blue  underline mr-2"
+											>
+												{getSocialsIcon(k)}
+											</Link>
+										}
+									</div>
+								);
+							})}
+					</div>
 				</>
 			)}
 			<WalletMultiButton />
