@@ -128,12 +128,6 @@ export async function takeAttendance(
 	// Check if the attendaceTakerAccount is a whitelisted wallet
 	// example:
 
-	console.log(
-		await isValidAttendanceTaker(event_id, attendaceTakerAccount),
-		event_id,
-		attendaceTakerAccount
-	);
-	
 	if (!(await isValidAttendanceTaker(event_id, attendaceTakerAccount))) {
 		return {
 			error: "Attedance Taker is not using a valid wallet! Please contact organiser",
