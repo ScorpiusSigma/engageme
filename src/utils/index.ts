@@ -70,18 +70,38 @@ export const isValidWallet = (wallet: PublicKey) => {
 	// Check the db if its inside
 };
 
+export async function isValidAttendanceTaker(e_id: string, account: PublicKey): Promise<boolean> {
+	const res = await fetch(`/api/events/${e_id}/is_atten_taker`, {
+		method: "POST",
+		body: JSON.stringify({
+			publicKey: account
+		}),
+		headers: new Headers({
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		})
+	}
+	)
+	if (res.status != 200) {
+		return false
+	}
+
+	return (await res.json()).is_attendance_taker
+}
+
 export async function takeAttendance(
+	event_id: string,
 	attendaceTakerAccount: PublicKey,
 	userAccount: PublicKey
 ) {
 	// TODO: Jun Leong
 	// Check if the attendaceTakerAccount is a whitelisted wallet
 	// example:
-	// if (!isValidAttendanceTaker(attendaceTakerAccount)) {
-	// 	return {
-	// 		error: "Attedance Taker is not using a valid wallet! Please contact organiser",
-	// 	};
-	// }
+	if (!(await isValidAttendanceTaker(event_id, attendaceTakerAccount))) {
+		return {
+			error: "Attedance Taker is not using a valid wallet! Please contact organiser",
+		};
+	}
 
 	// Fetch the recent blockhash
 	const connection = new Connection(ENDPOINT);
@@ -160,11 +180,12 @@ export async function isAttendanceTaken(userAccount: PublicKey) {
 	return false;
 }
 
-export async function getUnclaimedNfts(e_id: string){
-	// get orgProxy by e_id first
 
+
+export async function getUnclaimedNfts(e_id: string) {
+	// get orgProxy by e_id first
 	let res = await fetch(`/api/events/${e_id}/get_org_proxy`);
-	if (res.status != 200){
+	if (res.status != 200) {
 		return null
 	}
 	const orgProxy: PublicKey = (await res.json()).orgProxy;
@@ -172,7 +193,7 @@ export async function getUnclaimedNfts(e_id: string){
 	return await getNftsOfWallet(orgProxy)
 }
 
-export async function getNftsOfWallet(wallet: PublicKey){
+export async function getNftsOfWallet(wallet: PublicKey) {
 	const connection = new Connection(ENDPOINT);
 	const metaplex = new Metaplex(connection);
 
@@ -183,7 +204,7 @@ export async function getNftsOfWallet(wallet: PublicKey){
 			programId: TOKEN_PROGRAM_ID,
 		}
 	);
-	let tokenAddrs = tokenAccounts.value.map(({account}) => {
+	let tokenAddrs = tokenAccounts.value.map(({ account }) => {
 		return account.data.parsed.info.mint;
 	})
 	return tokenAddrs;
@@ -293,6 +314,16 @@ const getKeypair = (): Keypair => {
 	return keypair;
 };
 
+
+const getTokenAddrFromDB = async (e_id: string,
+	uuid: string) => {
+	const res = await fetch(`/api/events/${e_id}/${uuid}`)
+	if (res.status != 200){
+		return "";
+	}
+	return (await res.json()).evt_token_addr
+}
+
 export async function redeem(
 	e_id: string,
 	uuid: string,
@@ -304,7 +335,7 @@ export async function redeem(
 	// Get nft mint address with e_id and uuid
 	// example code: const MINT = await (e_id, uuid)
 	// This means you will remove the line below
-	const MINT = "Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
+	const MINT = getTokenAddrFromDB(e_id, uuid);//"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
 
 	// connection
 	const connection = new Connection(ENDPOINT);
