@@ -29,6 +29,7 @@
     "autoprefixer": "10.4.14",
     "bs58": "^5.0.0",
     "crypto": "^1.0.1",
+    "dayjs": "^1.11.7",
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
     "next": "13.3.0",
