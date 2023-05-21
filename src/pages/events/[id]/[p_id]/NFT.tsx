@@ -209,11 +209,31 @@ export default function PartProfile() {
 	}, [router.isReady, publicKey]);
 
 	return (
-		<div className="flex flex-col items-center pt-20 h-screen w-full">
+		<div
+			className={
+				"flex flex-col items-center h-screen w-full " +
+				(isOwner ? "pt-10" : "pt-20")
+			}
+		>
 			{!publicKey && <div className="mb-4">Please connect first! </div>}
 			{publicKey && nftDeets && isEvtNFTClaimed && (
 				<>
-					<div className="p-5 flex justify-center items-center w-full h-1/2">
+					{isOwner && (
+						<div className="flex flex-col items-center">
+							<button onClick={flipCard}>
+								<Image
+									src={"/watermark.gif"}
+									alt="watermark"
+									width={50}
+									height={50}
+								/>
+							</button>
+							<p className="text-xs">
+								Click on me to reveal QR code
+							</p>
+						</div>
+					)}
+					<div className="px-5 pb-5 flex flex-col justify-center items-center w-full h-1/2">
 						<div className="flex justify-center items-center w-max h-full">
 							<ReactCardFlip
 								isFlipped={isImgFlip}
