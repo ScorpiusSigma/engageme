@@ -40,8 +40,7 @@ async function postImpl(evtDetails: PostParam): Promise<PostResponse> {
     evnet_id: { S: id },
     ...evtDetails2,
   };
-  console.log("Item")
-  console.log(Item)
+
   await client.send(
     new PutItemCommand({
       TableName: ddbTables.evt,
@@ -68,7 +67,6 @@ async function post(
     res.status(200).json(output);
     return;
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "error editting event" });
     return;
   }

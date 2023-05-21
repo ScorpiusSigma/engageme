@@ -86,7 +86,6 @@ export default function CreateEvents() {
                 </div>
                 <div className="relative mb-4 flex justify-center items-center">
                     <Datepicker value={dates} onChange={(date) => {
-                        console.log(date)
                         setDates(date)
                     }} />
                 </div>

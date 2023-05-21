@@ -57,7 +57,6 @@ export const createHashAuth = (
 };
 
 export const generateQrCodeLink = (
-	host: string,
 	walletAddress: PublicKey,
 	tokenAddress: PublicKey,
 	mintAccount: PublicKey,
@@ -67,7 +66,9 @@ export const generateQrCodeLink = (
 	return (
 		"solana:" +
 		encodeURIComponent(
-			`${host}/api/attendance-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${ORG_ACCOUNT}&eventId=${eventId}`
+			`${
+				process.env.BASE_URL
+			}/api/attendance-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${ORG_ACCOUNT}&eventId=${eventId}`
 		)
 	);
 };
@@ -80,16 +81,36 @@ export async function isValidAttendanceTaker(
 	e_id: string,
 	account: PublicKey
 ): Promise<boolean> {
-	const res = await fetch(`/api/events/${e_id}/is_atten_taker`, {
-		method: "POST",
-		body: JSON.stringify({
-			publicKey: account,
-		}),
-		headers: new Headers({
-			"Content-Type": "application/json",
-			Accept: "application/json",
-		}),
-	});
+	let res;
+
+	switch (process.env.BASE_URL) {
+		case undefined:
+			res = await fetch(`/api/events/${e_id}/is_atten_taker`, {
+				method: "POST",
+				body: JSON.stringify({
+					publicKey: account,
+				}),
+				headers: new Headers({
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				}),
+			});
+			break;
+		default:
+			res = await fetch(
+				`${process.env.BASE_URL}/api/events/${e_id}/is_atten_taker`,
+				{
+					method: "POST",
+					body: JSON.stringify({
+						publicKey: account,
+					}),
+					headers: new Headers({
+						"Content-Type": "application/json",
+						Accept: "application/json",
+					}),
+				}
+			);
+	}
 
 	if (res.status != 200) {
 		return false;
@@ -99,13 +120,20 @@ export async function isValidAttendanceTaker(
 }
 
 export async function takeAttendance(
-	event_id: string,
+	event_id: any,
 	attendaceTakerAccount: PublicKey,
 	userAccount: PublicKey
 ) {
 	// TODO: Jun Leong
 	// Check if the attendaceTakerAccount is a whitelisted wallet
 	// example:
+
+	console.log(
+		await isValidAttendanceTaker(event_id, attendaceTakerAccount),
+		event_id,
+		attendaceTakerAccount
+	);
+	
 	if (!(await isValidAttendanceTaker(event_id, attendaceTakerAccount))) {
 		return {
 			error: "Attedance Taker is not using a valid wallet! Please contact organiser",
@@ -135,7 +163,7 @@ export async function takeAttendance(
 	});
 
 	const base64 = serializedTransaction.toString("base64");
-	const message = "Please approve the transaction to take your attendance!";
+	const message = "Take attendance by approving transaction!";
 
 	return {
 		transaction: base64,
@@ -167,7 +195,6 @@ export async function isAttendanceTaken(userAccount: PublicKey) {
 
 					if (blockTime) {
 						const transactionTime = unixTimestampToDate(blockTime);
-						console.log("Transaction Time:", transactionTime);
 
 						if (
 							/**
@@ -218,45 +245,12 @@ export async function getNftsOfWallet(wallet: PublicKey) {
 }
 
 // I think can use my check if nft is owner code instead of this O(n) method
-// export async function isRedeemed(recvWallet: PublicKey) {
-// 	const connection = new Connection(ENDPOINT);
-// 	const metaplex = new Metaplex(connection);
-
-// 	// 1. Fetch the user's token accounts
-// 	const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-// 		recvWallet,
-// 		{
-// 			programId: TOKEN_PROGRAM_ID,
-// 		}
-// 	);
-
-// 	// 2. Check if any of the token accounts belong to the desired collection address.
-// 	for (const account of tokenAccounts.value) {
-// 		// 2a. Get NFT token address.
-// 		const tokenAddress = account.account.data.parsed.info.mint;
-
-// 		let nft;
-// 		// 2b. Get NFT details with Metaplex.
-// 		try {
-// 			nft = await metaplex
-// 				.nfts()
-// 				.findByMint({ mintAddress: new PublicKey(tokenAddress) });
-// 		} catch (e) {
-// 			continue;
-// 		}
-
-// 		// 2c. Get the collection address and verification.
-// 		const mintAddress = nft?.collection?.address.toString();
-// 		const isVerified = nft?.collection?.verified;
-
-// 		// 2d. Check if the collection address is the correct one and if it is verified.
-// 		if (mintAddress === MINT_ACCOUNT && isVerified) {
-// 			return true;
-// 		}
-// 	}
-
-// 	return false;
-// }
+export async function isRedeemedWallet(
+	recvWallet: PublicKey,
+	tokenPK: PublicKey
+) {
+	return recvWallet.toString() === (await getNFTOwnerWallet(tokenPK));
+}
 
 export async function isRedeemed(tokenAddress: PublicKey) {
 	return (await getNFTOwnerWallet(tokenAddress)) !== ORG_ACCOUNT;
@@ -313,7 +307,6 @@ export async function getMintAddressOfToken(tokenAddress: PublicKey) {
 const getKeypair = (): Keypair => {
 	// Collection owner keypair
 	if (!process.env.COLLECTION_OWNER_PRIVATE_KEY) {
-		console.log("COLLECTION_OWNER_PRIVATE_KEY not found!");
 		return new Keypair();
 	}
 	const keypair = Keypair.fromSecretKey(
@@ -323,19 +316,17 @@ const getKeypair = (): Keypair => {
 	return keypair;
 };
 
-export const getTokenAddrFromDB = async (
-	e_id: string,
-	uuid: string,
-	baseUrl?: string
-) => {
+export const getTokenAddrFromDB = async (e_id: string, uuid: string) => {
 	let res;
 
-	switch (baseUrl) {
+	switch (process.env.BASE_URL) {
 		case undefined:
 			res = await fetch(`/api/events/${e_id}/${uuid}`);
 			break;
 		default:
-			res = await fetch(`${baseUrl}/api/events/${e_id}/${uuid}`);
+			res = await fetch(
+				`${process.env.BASE_URL}/api/events/${e_id}/${uuid}`
+			);
 	}
 
 	if (res.status != 200) {
@@ -347,10 +338,9 @@ export const getTokenAddrFromDB = async (
 export async function redeem(
 	e_id: string,
 	p_id: string,
-	recvWallet: PublicKey,
-	baseUrl: string
+	recvWallet: PublicKey
 ) {
-	const MINT = (await getTokenAddrFromDB(e_id, p_id, baseUrl)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
+	const MINT = (await getTokenAddrFromDB(e_id, p_id)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
 
 	// connection
 	const connection = new Connection(ENDPOINT);
@@ -393,8 +383,8 @@ export async function redeem(
 	);
 
 	const message = `NFT of ${mintPublicKey} has been transferred to ${receiverTokenAccount.address}`;
-	console.log(message);
 
+	console.log(message);
 	return {
 		message,
 	};

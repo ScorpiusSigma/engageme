@@ -51,7 +51,6 @@ async function getParticipants(e_id: string) {
 }
 
 async function deleteParticipants(e_id: string) {
-  console.log("deleteParticipants")
   const client = ddbClient;
   let old_data = [] as any[] | undefined
   try {
@@ -104,14 +103,12 @@ async function postImpl(
       }
     }
     entry['event_id'] = { S: e_id }
-    // console.log(entry)
     toAdd.push({
       "PutRequest": {
         "Item": entry
       }
     })
   }
-  console.log(toAdd)
 
   //   ddbTables.evt_part
   const input: BatchWriteItemCommandInput = {
@@ -119,7 +116,7 @@ async function postImpl(
       [ddbTables.evt_part]: toAdd
     }
   }
-  console.log(input)
+
   // try {
   const res = await client.send(
     new BatchWriteItemCommand(input)
@@ -141,29 +138,23 @@ async function post(
 ) {
   const { id } = req.query; // Retrieve the square bracket param
 
-  console.log(`id: ${id}`);
   if (id == undefined) {
     res.status(400);
     return;
   }
   const new_participants = req.body as PostParam;
-  console.log("new_participants")
-  console.log(new_participants)
 
   try {
     const output = await postImpl(id as string, new_participants);
     res.status(200).json(output);
     return;
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "error adding participants" });
     return;
   }
 }
 async function getImpl(e_id: string): Promise<GetResponse> {
   const Items = await getParticipants(e_id)
-  console.log("Items")
-  console.log(Items)
 
   return Items as unknown as GetResponse;
   // try {
@@ -182,7 +173,6 @@ async function get(
 ) {
   const { id } = req.query; // Retrieve the square bracket param
 
-  console.log(`id: ${id}`);
   if (id == undefined) {
     res.status(400);
     return;
@@ -192,7 +182,6 @@ async function get(
     res.status(200).json(output);
     return;
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Error Getting Participants" });
     return;
   }
@@ -202,7 +191,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<GetResponse | PostResponse | PostError>
 ) {
-  console.log("events/[id]/participants called");
   if (req.method === "GET") {
     // Getting the details for the events
     return await get(req, res);

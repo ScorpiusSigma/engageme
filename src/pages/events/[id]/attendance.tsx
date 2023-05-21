@@ -21,7 +21,6 @@ export default function AttendancePage() {
       mintAccount: "1",
       orgAccount: "1",
     });
-    console.log(params);
 
     const res = await fetch("/api/attendance", {
       method: "POST",
@@ -36,7 +35,6 @@ export default function AttendancePage() {
       return;
     }
     const { qrcode } = await res.json();
-    console.log(qrcode);
     // 2 - Generate a QR Code from the URL and generate a blob
     const qr = createQR(qrcode);
     const qrBlob = await qr.getRawData("png");

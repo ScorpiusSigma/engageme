@@ -1,17 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-	Connection,
-	PublicKey,
-	SystemProgram,
-	Transaction,
-} from "@solana/web3.js";
-import {
-	ENDPOINT,
-	generateQrCodeLink,
-	getBaseUrl,
-	getMintAddressOfToken,
-	ORG_ACCOUNT,
-} from "@/utils";
+import { PublicKey } from "@solana/web3.js";
+import { generateQrCodeLink, getMintAddressOfToken } from "@/utils";
 
 type InputData = {
 	account: string;
@@ -58,7 +47,6 @@ async function post(
 	try {
 		const response = {
 			qrcode: generateQrCodeLink(
-				getBaseUrl(req),
 				new PublicKey(account),
 				new PublicKey(token),
 				new PublicKey(
@@ -71,7 +59,6 @@ async function post(
 		res.status(200).json(response);
 		return;
 	} catch (error) {
-		console.error(error);
 		res.status(500).json({ error: "error creating transaction" });
 		return;
 	}

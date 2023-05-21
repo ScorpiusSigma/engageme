@@ -52,20 +52,18 @@ export default function PartProfile() {
 			return null;
 		}
 		const data = await res.json();
-		console.log("res", data);
+
 		for (const [k, v] of Object.entries(data)) {
 			data[k] = Object.values(v as any)[0];
 		}
 		setPDeets(data);
-		console.log("fetch participant");
-		console.log(data);
+
 		return data;
 	};
 
 	const fetchNFT = async (part_data: any) => {
 		const { id } = router.query;
-		console.log("Fetch nft");
-		console.log(part_data);
+
 		let token_addr = part_data?.evt_token_addr;
 		if (!token_addr) {
 			return;
@@ -77,13 +75,12 @@ export default function PartProfile() {
 		if (owner == publicKey) {
 			setIsOwner(true);
 			await fetchOrganiser(id as string);
-			getQrCode(part_data);
+			getQrCode(part_data, id);
 		}
 	};
 
 	const flipCard = () => {
 		if (!isOwner) {
-			console.log("You are not the owner");
 			return;
 		}
 
@@ -133,15 +130,13 @@ export default function PartProfile() {
 		}
 	};
 
-	const getQrCode = async (part_data: any) => {
-		// console.log(pDeets)
+	const getQrCode = async (part_data: any, e_id: any) => {
 		const pDeets = part_data;
 		let params = JSON.stringify({
 			account: publicKey,
 			token: pDeets.evt_token_addr,
-			orgAccount: orgAddr,
+			eventId: e_id,
 		});
-		console.log(params);
 
 		const res = await fetch("/api/attendance", {
 			method: "POST",
@@ -151,10 +146,12 @@ export default function PartProfile() {
 				Accept: "application/json",
 			}),
 		});
+
 		if (res.status != 200) {
 			setStatus((await res.json()).error);
 			return;
 		}
+
 		const { qrcode } = await res.json();
 		// 2 - Generate a QR Code from the URL and generate a blob
 		const qr = createQR(qrcode);

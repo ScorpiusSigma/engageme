@@ -34,7 +34,6 @@ async function post(req: NextApiRequest, res: NextApiResponse<PostResponse | Pos
     const { publicKey } = req.body
 
 
-    console.log(`id: ${id}`);
     if (id == undefined) {
         res.status(400);
         return
@@ -43,7 +42,6 @@ async function post(req: NextApiRequest, res: NextApiResponse<PostResponse | Pos
         const output = await postImpl(id as string,  publicKey);
         res.status(200).json(output);
     } catch (e) {
-        console.log(e)
         res.status(500).json({
             is_attendance_taker: false
         });  //{ error: "Error Looking up attendance taker" }
@@ -55,7 +53,6 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse<PostResponse | PostError>
 ) {
-    console.log("events/[id]/is_atten_taker called");
     if (req.method === "POST") {
         // Getting the details for the events
         return await post(req, res);

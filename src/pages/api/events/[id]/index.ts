@@ -25,7 +25,6 @@ async function get(req: NextApiRequest, res: NextApiResponse<GetResponse>) {
   // } = req;
   const { id } = req.query; // Retrieve the square bracket param
 
-  console.log(`id: ${id}`);
   if (id == undefined) {
     res.status(400);
     return
@@ -53,7 +52,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<GetResponse | PostResponse | PostError>
 ) {
-  console.log("events/[id] called");
   if (req.method === "GET") {
     // Getting the details for the events
     return await get(req, res);

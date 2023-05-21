@@ -1,17 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-	clusterApiUrl,
-	Connection,
-	PublicKey,
-	SystemProgram,
-	Transaction,
-} from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Metaplex } from "@metaplex-foundation/js";
+import { clusterApiUrl, PublicKey } from "@solana/web3.js";
 import {
 	createHashAuth,
 	isAttendanceTaken,
-	isRedeemed,
+	isRedeemedWallet,
 	takeAttendance,
 } from "@/utils";
 
@@ -63,8 +55,7 @@ async function post(
 	res: NextApiResponse<PostResponse | PostError>
 ) {
 	const { account } = req.body as InputData;
-	console.log(`account: ${account}`);
-	const { mintAccount, hash, wallet, token } = req.query;
+	const { mintAccount, hash, wallet, token, eventId } = req.query;
 
 	if (!account) {
 		res.status(400).json({ error: "No account provided" });
@@ -91,6 +82,11 @@ async function post(
 		return;
 	}
 
+	if (!eventId) {
+		res.status(400).json({ error: "No event ID provided" });
+		return;
+	}
+
 	if (await isAttendanceTaken(new PublicKey(wallet))) {
 		res.status(500).json({ error: "Attendance is already taken!" });
 	}
@@ -100,10 +96,16 @@ async function post(
 			new PublicKey(wallet),
 			new PublicKey(token)
 		);
-		console.log(`${hash} vs ${hashChecker}`);
 
-		if (hash === hashChecker && (await isRedeemed(new PublicKey(wallet)))) {
+		if (
+			hash === hashChecker &&
+			(await isRedeemedWallet(
+				new PublicKey(wallet),
+				new PublicKey(token)
+			))
+		) {
 			const response = await takeAttendance(
+				eventId,
 				new PublicKey(account),
 				new PublicKey(wallet)
 			);
@@ -113,7 +115,6 @@ async function post(
 			res.status(500).json({ error: "User is not owner of NFT!" });
 		}
 	} catch (error) {
-		console.error(error);
 		res.status(500).json({ error: "error creating transaction" });
 		return;
 	}
@@ -123,7 +124,6 @@ export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse<GetResponse | PostResponse | PostError>
 ) {
-	console.log("Attendance auth");
 	if (req.method === "GET") {
 		return get(res);
 	} else if (req.method === "POST") {

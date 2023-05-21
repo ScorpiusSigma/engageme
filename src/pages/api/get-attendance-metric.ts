@@ -27,7 +27,6 @@ async function get(req: NextApiRequest, res: NextApiResponse) {
 		});
 		return;
 	} catch (error) {
-		console.error(error);
 		res.status(500).json({ error: "Error minting" });
 		return;
 	}

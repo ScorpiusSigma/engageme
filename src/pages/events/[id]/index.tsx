@@ -49,7 +49,7 @@ export default function Event() {
       return
     }
     let data = await res.json()
-    console.log(data)
+
     data = data.map((el: any) => {
       let toRet: { [name: string]: any } = {}
       for (const [k, v] of Object.entries(el)) {
@@ -57,8 +57,7 @@ export default function Event() {
       }
       return toRet
     })
-    console.log("Attendance takers")
-    console.log(data)
+
     setAttenTakers(data)
   }
 
@@ -85,7 +84,7 @@ export default function Event() {
   }
 
   const uploadParticipants = async () => {
-    console.log("uploadParticipants")
+
     const { id } = router.query;
     if (file == null || file == undefined) {
       return;
@@ -107,7 +106,7 @@ export default function Event() {
       data[i]['participant_id'] = uuid.v4()
       data[i]['evt_token_addr'] = availTokens[i]
     }
-    console.log(data);
+
     const res = await fetch(
       `/api/events/${id}/participants`, {
       method: "POST",
@@ -119,7 +118,7 @@ export default function Event() {
       )
     });
     if (res.status != 200) {
-      console.log(res)
+
       return
     }
     setPart(data)
@@ -128,8 +127,8 @@ export default function Event() {
 
 	const fetchEventById = async () => {
 		const { id } = router.query;
-		console.log(`id: ${id}`);
-		const res = await fetch(`/api/events/${id}`);
+
+    const res = await fetch(`/api/events/${id}`);
 		if (res.status != 200) {
 			setEvtDeets({
 				name: "Event not found!",
@@ -139,25 +138,25 @@ export default function Event() {
 			return;
 		}
 		let data = await res.json();
-		console.log(data);
-		Object.entries(data).map(([k, v]) => {
+
+    Object.entries(data).map(([k, v]) => {
 			if (k == "organiser") delete data[k];
 			data[k] = Object.values(v as any)[0];
 		});
-		console.log(data);
-		setEvtDeets(data);
+
+    setEvtDeets(data);
 	};
 
   const fetchParticipantsByEvent = async () => {
     const { id } = router.query;
-    console.log(`id: ${id}`);
+
     const res = await fetch(`/api/events/${id}/participants`);
     if (res.status != 200) {
       setPart(null);
       return;
     }
     let data = (await res.json());
-    console.log(data)
+
     data = data.map((el: any) => {
       let toRet: { [name: string]: any } = {}
       for (const [k, v] of Object.entries(el)) {
@@ -165,7 +164,7 @@ export default function Event() {
       }
       return toRet
     })
-    console.log(data)
+
     setPart(data);
   };
 

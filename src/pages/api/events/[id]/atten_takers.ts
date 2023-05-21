@@ -20,8 +20,6 @@ async function postImpl(
     new_taker: PostParam
   ): Promise<PostResponse> {
     const client = ddbClient;
-    console.log("new_taker")
-    console.log(new_taker)
     let Item = {
         event_id: { S: e_id },
         taker_addr: { S: new_taker.taker_addr },
@@ -51,7 +49,6 @@ async function post(
       res.status(200).json(output);
       return;
     } catch (error) {
-      console.error(error);
       res.status(500).json({ error: "error adding taker" });
       return;
     }
@@ -61,7 +58,6 @@ async function post(
 async function get(req: NextApiRequest, res: NextApiResponse<GetResponse>) {
   const { id } = req.query; // Retrieve the square bracket param
 
-  console.log(`id: ${id}`);
   if (id == undefined) {
     res.status(400);
     return
@@ -96,7 +92,6 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse<GetResponse | PostResponse | PostError>
   ) {
-    console.log("events/[id]/atten_taker called");
     if (req.method === "GET") {
       // Getting the details for the events
       return await get(req, res);

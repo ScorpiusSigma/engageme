@@ -13,7 +13,6 @@ type PostError = {
 async function get(req: NextApiRequest, res: NextApiResponse<GetResponse | PostError>) {
     const { id } = req.query; // Retrieve the square bracket param
   
-    console.log(`id: ${id}`);
     if (id == undefined) {
       res.status(400);
       return
@@ -23,7 +22,6 @@ async function get(req: NextApiRequest, res: NextApiResponse<GetResponse | PostE
     const output = await getImpl(id as string);
     res.status(200).json(output);   
     } catch (e){
-        console.log(e)
         res.status(500).json({ error: "error getting organiser proxy" });
     }
     return
@@ -48,7 +46,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<GetResponse | PostError>
 ) {
-  console.log("events/[id]/atten_taker called");
   if (req.method === "GET") {
     // Getting the details for the events
     return await get(req, res);

@@ -9,22 +9,7 @@
  *  */
 
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-	clusterApiUrl,
-	Connection,
-	Keypair,
-	PublicKey,
-	SystemProgram,
-	Transaction,
-} from "@solana/web3.js";
-import base58 from "bs58";
-import {
-	TOKEN_PROGRAM_ID,
-	createTransferCheckedInstruction,
-	getMint,
-	getOrCreateAssociatedTokenAccount,
-} from "@solana/spl-token";
-import { GuestIdentityDriver } from "@metaplex-foundation/js";
+import { clusterApiUrl, PublicKey } from "@solana/web3.js";
 
 // Mainnet USDC, uncomment if using mainnet
 // const USDC_ADDRESS = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
@@ -32,7 +17,7 @@ import { GuestIdentityDriver } from "@metaplex-foundation/js";
 // Connection endpoint, switch to a mainnet RPC if using mainnet
 const ENDPOINT = clusterApiUrl("devnet");
 
-import { getBaseUrl, isRedeemed, redeem } from "@/utils";
+import { isRedeemed, redeem } from "@/utils";
 
 type GetResponse = {
 	label: string;
@@ -161,16 +146,10 @@ async function post(req: NextApiRequest, res: NextApiResponse) {
 	}
 
 	try {
-		const resp = await redeem(
-			e_id,
-			p_id,
-			new PublicKey(account),
-			getBaseUrl(req)
-		);
+		const resp = await redeem(e_id, p_id, new PublicKey(account));
 		res.status(200).json(resp);
 		return;
 	} catch (error) {
-		console.error(error);
 		res.status(500).json({ error: "Error minting" });
 		return;
 	}

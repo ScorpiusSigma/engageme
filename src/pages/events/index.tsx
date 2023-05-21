@@ -20,7 +20,6 @@ export default function Events() {
 
 	const fetchEvents = async () => {
 		const res = await fetch("/api/events");
-		console.log(res)
 		if (res.status != 200) {
 			return
 		}
@@ -33,7 +32,6 @@ export default function Events() {
 			}
 			return toRet
 		})
-		console.log(data)
 		setEvents(data)
 	}
 

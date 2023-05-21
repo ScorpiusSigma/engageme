@@ -172,7 +172,6 @@ async function post(
 		res.status(200).json(mintOutputData);
 		return;
 	} catch (error) {
-		console.error(error);
 		res.status(500).json({ error: "error creating transaction" });
 		return;
 	}

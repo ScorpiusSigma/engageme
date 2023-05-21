@@ -25,7 +25,6 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse<GetResponse | PostResponse | PostError>
   ) {
-    console.log("events called");
     if (req.method === "GET") {
       // Getting the details for the events
       return await get(req, res);
