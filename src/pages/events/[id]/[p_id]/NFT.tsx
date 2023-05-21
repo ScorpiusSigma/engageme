@@ -30,7 +30,6 @@ export default function PartProfile() {
 	const [tokenAddress, setTokenAddress] = useState<string>("");
 	const [loading, setLoading] = useState(false);
 	let orgAddr = "";
-	// const [orgAddr, setOrgAddr] = useState<string>("");
 
 	const [isImgFlip, setImgFlip] = useState(false);
 	const [status, setStatus] = useState<string>();

@@ -40,7 +40,7 @@ export default function Events() {
 	}, [])
 
 	return (
-		<div className="h-screen w-full bg-white dark:bg-slate-800 dark:text-white font-robo relative">
+		<div className="h-screen w-full bg-slate-100 dark:bg-slate-800 dark:text-white font-robo relative">
 			<Navbar />
 			<div className="relative pt-16 px-4 w-full">
 				<div className="relative mt-4 font-semibold text-5xl ">

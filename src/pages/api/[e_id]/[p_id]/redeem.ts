@@ -17,7 +17,8 @@ import { clusterApiUrl, PublicKey } from "@solana/web3.js";
 // Connection endpoint, switch to a mainnet RPC if using mainnet
 const ENDPOINT = clusterApiUrl("devnet");
 
-import { isRedeemed, redeem } from "@/utils";
+import { ddbClient, ddbTables, isRedeemed, redeem } from "@/utils";
+import { UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 
 type GetResponse = {
 	label: string;
@@ -120,8 +121,25 @@ function get(res: NextApiResponse<GetResponse>) {
 // 		message,
 // 	};
 // }
+async function postImpl(p_id: string, e_id: string, account: string): Promise<void> {
+	const client = ddbClient;
+	const { Attributes } = await client.send(
+		new UpdateItemCommand({
+			TableName: ddbTables.evt_part,
+			Key: {
+				event_id: { S: e_id },
+				participant_id: { S: p_id },
+			},
+			UpdateExpression: 'set wallet_addr = :wa',
+			ExpressionAttributeValues:  {
+				':wa': { S:account }
+			},
+			ReturnValues: "ALL_NEW"
+		})
+	);
 
-// I tihnk this file should be api/[id]/redeem.ts  cuz redemption is event specific
+}
+
 async function post(req: NextApiRequest, res: NextApiResponse) {
 	const { p_id, e_id } = req.query;
 	const { account, tokenAddress } = JSON.parse(req.body) as InputData;
@@ -147,6 +165,8 @@ async function post(req: NextApiRequest, res: NextApiResponse) {
 
 	try {
 		const resp = await redeem(e_id, p_id, new PublicKey(account));
+		// update the database
+		await postImpl(p_id, e_id, account)
 		res.status(200).json(resp);
 		return;
 	} catch (error) {

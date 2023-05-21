@@ -103,6 +103,7 @@ async function postImpl(
       }
     }
     entry['event_id'] = { S: e_id }
+    entry['is_active'] = { BOOL: true }
     toAdd.push({
       "PutRequest": {
         "Item": entry

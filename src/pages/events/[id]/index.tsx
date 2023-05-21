@@ -19,6 +19,7 @@ import { parseCSV } from "@/utils/csvParser";
 import events from "..";
 import * as uuid from "uuid";
 import { getUnclaimedNfts, tableCellStyle } from "@/utils";
+import DailyAttenGraph from "@/components/DailyAttenGraph";
 
 // import { usePapaParse } from "react-papaparse";
 
@@ -45,8 +46,10 @@ export default function Event() {
 		name: "",
 	});
 
+	const [attenMetric, setAttenMetrics] = useState<any[] | null>(null);
+
 	const getAttenTakers = async (e_id: string) => {
-		const res = await fetch(`/api/events/${e_id}/atten_taker`);
+		const res = await fetch(`/api/events/${e_id}/atten_takers`);
 		if (res.status != 200) {
 			setAttenTakers([]);
 			return;
@@ -66,7 +69,7 @@ export default function Event() {
 
 	const addAttenTaker = async () => {
 		const { id } = router.query;
-		const res = await fetch(`/api/events/${id}/atten_taker`, {
+		const res = await fetch(`/api/events/${id}/atten_takers`, {
 			method: "POST",
 			body: JSON.stringify(newTaker),
 			headers: new Headers({
@@ -160,6 +163,10 @@ export default function Event() {
 		data = data.map((el: any) => {
 			let toRet: { [name: string]: any } = {};
 			for (const [k, v] of Object.entries(el)) {
+				if (k == "event_id") {
+					delete toRet[k]
+					continue;
+				}
 				toRet[k] = Object.values(v as any)[0];
 			}
 			return toRet;
@@ -167,6 +174,16 @@ export default function Event() {
 
 		setPart(data);
 	};
+
+	const fetchAttendanceMetric = async () => {
+		// const { id } = router.query; // should get by event id
+
+		const res = await fetch(`/api/get-attendance-metric?isAgg=true`);
+		if (res.status != 200) {
+			return
+		}
+		setAttenMetrics(await res.json())
+	}
 
 	useEffect(() => {
 		if (!router.isReady) return;
@@ -178,10 +195,11 @@ export default function Event() {
 		fetchEventById();
 		fetchParticipantsByEvent();
 		getAttenTakers(id as string);
+		fetchAttendanceMetric();
 	}, [router.isReady]);
 
 	return (
-		<div className="h-screen w-full bg-white dark:bg-slate-800 dark:text-white font-robo relative">
+		<div className="h-screen w-full bg-slate-100 dark:bg-slate-800 dark:text-white font-robo relative">
 			{/* <div className="bg-black rounded-b-xl absolute top-0 left-0 h-1/3 w-full"></div> */}
 			<Navbar />
 			<div className="relative pt-16 mx-4">
@@ -193,42 +211,51 @@ export default function Event() {
 					<div>{`${evtDeets.startDate} to ${evtDeets.endDate}`}</div>
 				</div>
 				{/* participants */}
-				<div className=" rounded-lg bg-white shadow-md p-4">
-					<div className="mb-4 flex justify-between  ">
-						<div className=" text-xl font-semibold">
-							Participants
-						</div>
-						<div className=" text-right">
-							<div>Upload participant details</div>
-							<Button
-								variant="contained"
-								component="label"
-								className=""
-							>
-								<UploadFileIcon />
-								<span className="mt-1 ml-1">Upload</span>
-								<input
-									type="file"
-									hidden
-									accept=".csv"
-									onChange={(e) => {
-										const files = e.target.files;
-										if (!files) return;
-										setFile(files[0]);
-									}}
-								/>
-							</Button>
-							{file != null && (
+				<div className=" rounded-lg bg-white drop-shadow-lg p-4 mt-4">
+					<div className="mb-4 flex justify-between ">
+						<div>
+							<div className=" text-xl font-semibold">
+								Participants
+							</div>
+							<div className=" text-left mt-4">
+								{/* <div>Upload participant details</div> */}
 								<Button
 									variant="contained"
 									component="label"
-									className=" bg-green-400 hover:bg-green-600 ml-3"
-									onClick={() => {
-										uploadParticipants();
-									}}
+									className=""
 								>
-									<span className="mt-1">Confirm</span>
+									<UploadFileIcon />
+									<span className="mt-1 ml-1">Upload</span>
+									<input
+										type="file"
+										hidden
+										accept=".csv"
+										onChange={(e) => {
+											const files = e.target.files;
+											if (!files) return;
+											setFile(files[0]);
+										}}
+									/>
 								</Button>
+								{file != null && (
+									<Button
+										variant="contained"
+										component="label"
+										className=" bg-green-400 hover:bg-green-600 ml-3"
+										onClick={() => {
+											uploadParticipants();
+										}}
+									>
+										<span className="mt-1">Confirm</span>
+									</Button>
+								)}
+							</div>
+						</div>
+						<div>
+
+							<p>Attendance metrics</p>
+							{attenMetric != null && (
+								<DailyAttenGraph width={600} height={400} data={attenMetric} className="" />
 							)}
 						</div>
 					</div>

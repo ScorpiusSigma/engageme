@@ -369,7 +369,7 @@ export async function redeem(
 
 	const transaction = new Transaction().add(instruction);
 
-	const res = await sendAndConfirmTransaction(
+	await sendAndConfirmTransaction(
 		connection,
 		transaction,
 		[collectionOwnerKeypair],
@@ -459,6 +459,29 @@ export function getAttendanceMetric() {
 		});
 
 	return metric;
+}
+
+export const aggAttendanceMetric=(data: {
+	datetime: Date,
+	account: string
+}[]) => {
+	return Object.entries(data.map((el)=>{
+		return el.datetime.toISOString().substring(0, 10)//toLocaleDateString()
+	}).reduce((pv: any, cv: string)=>{
+		if (!pv.hasOwnProperty(cv)){
+			pv[cv] = 0
+		} 
+		pv[cv] += 1 
+		return pv
+	},{})).map(([k,v]: [any, any])=>{
+		console.log(`k: ${k}`)
+		return {
+			date: k,
+			e_time: new Date(k).getTime(),
+			count: v
+		}
+	})
+
 }
 
 export const airdrop = async (recvWallets: PublicKey[]) => {
