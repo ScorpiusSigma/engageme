@@ -73,12 +73,12 @@ export default function PartProfile() {
 		if (owner == publicKey) {
 			setIsOwner(true);
 			await fetchOrganiser(id as string);
-			getQrCode(part_data, id);
+			await getQrCode(part_data, id);
 		}
 	};
 
 	const flipCard = () => {
-		if (!isOwner) {
+		if (!isOwner || !qrCode) {
 			return;
 		}
 
