@@ -1,16 +1,5 @@
-/**
- * #TODO: check is datetime is enabled for redemption
- * Check how many time this link has been hit before redemption
- * uuid map to NFT
- *
- * User will have the qr generated on their website and organiser will scan with their phone to verify the user
- *
- * 24032023faoisjfneljnvpaidsuhnr
- *  */
-
 import { NextApiRequest, NextApiResponse } from "next";
-import { PublicKey } from "@solana/web3.js";
-import { getAttendanceMetric, isRedeemed, redeem } from "@/utils";
+import { getAttendanceMetric } from "@/utils";
 
 type GetResponse = {
 	label: string;
@@ -27,18 +16,6 @@ export type PostResponse = {
 export type PostError = {
 	error: string;
 };
-
-async function postImpl(recvWallet: PublicKey) {
-	try {
-		// TODO: Need to check if the wallet is whitelisted and get the respective NFT for transfer
-		const res = await redeem(recvWallet);
-		return {
-			message: `NFT transferred with transaction signature: ${res}`,
-		};
-	} catch (error) {
-		throw error;
-	}
-}
 
 async function get(req: NextApiRequest, res: NextApiResponse) {
 	try {

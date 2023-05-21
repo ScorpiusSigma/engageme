@@ -1,5 +1,6 @@
 import useWindowSize from "@/hooks/WindowResize";
 import { getNFTFromToken, getNFTOwnerWallet, isRedeemed } from "@/utils";
+import { Height } from "@mui/icons-material";
 import { createQR } from "@solana/pay";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
@@ -40,11 +41,6 @@ export default function PartProfile() {
 		let miao = fetchParticipant(id as string, p_id as string);
 		miao.then(fetchNFT);
 		miao.then(setPDeets);
-		// const temp = {
-		//     evt_token_addr: "9pBcndZY6cbXSCqHemnmL3Aj74QERh4E2GdcMaDQz3GM",//"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm"
-		// }
-		// setPDeets(temp)
-		// fetchNFT(temp)
 	}, [router.isReady, publicKey]);
 
 	const checkEvtRedeemed = async () => {
@@ -85,15 +81,9 @@ export default function PartProfile() {
 			return;
 		}
 		const nft = (await getNFTFromToken(part_data.evt_token_addr)) as any;
-		// console.log("nft")
-		// console.log(nft)
-		// console.log(nft?.address.toString())
-		// console.log(nft?.mint?.address.toString())
 		setNFTDeets(nft.json);
 
-		// const mintAddress = nft?.collection?.address.toString();
 		const owner = await getNFTOwnerWallet(token_addr);
-		// console.log(`owner: ${owner} vs public key: ${publicKey}`)
 		if (owner == publicKey) {
 			setIsOwner(true);
 			await fetchOrganiser(id as string);
@@ -194,59 +184,69 @@ export default function PartProfile() {
 	};
 
 	return (
-		<div className="flex justify-center items-center h-screen w-full flex-col">
+		<div className="flex flex-col items-center pt-20 h-screen w-full">
 			{!publicKey && <div className="mb-4">Please connect first! </div>}
 			{publicKey && nftDeets && (
 				<>
-					<div className="px-10 py-2">
-						<ReactCardFlip
-							isFlipped={isImgFlip}
-							flipDirection="horizontal"
-							key="front"
-						>
-							<img
-								src={nftDeets.image}
-								className="rounded-3xl"
-								onClick={flipCard}
-							/>
-							<img
-								key="back"
-								onClick={flipCard}
-								src={qrCode}
-								style={{
-									position: "relative",
-									background: "white",
+					<div className="p-5 flex justify-center items-center w-full h-1/2">
+						<div className="flex justify-center items-center w-max h-full">
+							<ReactCardFlip
+								isFlipped={isImgFlip}
+								flipDirection="horizontal"
+								key="front"
+								containerStyle={{
+									height: "100%",
+									width: "100%",
 								}}
-								alt="QR Code"
-								height={(windowSize.height || 100) / 2}
-							/>
-						</ReactCardFlip>
+							>
+								<img
+									src={nftDeets.image}
+									className="rounded-3xl h-full"
+									onClick={flipCard}
+								/>
+								<img
+									key="back"
+									onClick={flipCard}
+									src={qrCode}
+									style={{
+										position: "relative",
+										background: "white",
+									}}
+									alt="QR Code"
+									className="rounded-3xl h-full"
+								/>
+							</ReactCardFlip>
+						</div>
 					</div>
-					<div>
-						<p className="font-bold text-2xl">{pDeets.name}</p>
-					</div>
-					<div className="flex flex-row gap-2 pt-2">
-						{pDeets &&
-							Object.entries(pDeets).map(([k, v]) => {
-								if (
-									!v ||
-									(v as string).length == 0 ||
-									!(v as string).includes("http")
-								)
-									return;
-								return (
-									<div className="my-2">
-										{
-											<Link
-												href={v as string}
-												className=" text-my_blue  underline mr-2"
-											>
-												{getSocialsIcon(k)}
-											</Link>
-										}
-									</div>
-								);
-							})}
+					<div className="w-full flex flex-col items-center">
+						<div className="flex flex-col items-center">
+							<p className="font-bold text-2xl">{pDeets.name}</p>
+							<p className="text-lg">{pDeets.role}</p>
+						</div>
+						<div className="flex flex-row gap-2 pt-2">
+							{pDeets &&
+								Object.entries(pDeets).map(([k, v]) => {
+									if (
+										!v ||
+										(v as string).length == 0 ||
+										!(v as string).includes("http")
+									)
+										return;
+									return (
+										<div className="my-2">
+											{
+												<Link
+													target="_blank"
+													href={v as string}
+													className=" text-my_blue  underline mr-2"
+												>
+													{getSocialsIcon(k)}
+												</Link>
+											}
+										</div>
+									);
+								})}
+						</div>
 					</div>
 				</>
 			)}
