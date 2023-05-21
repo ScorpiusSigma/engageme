@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar/Navbar";
 import { Button, TextField } from "@mui/material";
 import Datepicker from "react-tailwindcss-datepicker"; 
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DateValueType } from "react-tailwindcss-datepicker/dist/types";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/router";
@@ -25,9 +25,12 @@ export default function CreateEvents() {
     const [submitStatus, setSubmitStatus] = useState(Status.nth)
     const [statMsg, setStatMsg] = useState("");
 
-    if (!publicKey) { 
-        router.push("/")
-    }
+    useEffect(() => {
+        if (!publicKey) { 
+            router.push("/")
+        }
+    },[])
+   
 
     const creteEvent = async() => {
 
