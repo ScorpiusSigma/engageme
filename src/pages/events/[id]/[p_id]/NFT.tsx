@@ -278,7 +278,7 @@ export default function PartProfile() {
 									)
 										return;
 									return (
-										<div className="my-2">
+										<div key={k} className="my-2">
 											{
 												<Link
 													target="_blank"
