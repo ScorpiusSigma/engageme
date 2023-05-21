@@ -1,4 +1,3 @@
-import useWindowSize from "@/hooks/WindowResize";
 import {
 	getNFTFromToken,
 	getNFTOwnerWallet,
@@ -6,7 +5,6 @@ import {
 	isRedeemed,
 } from "@/utils";
 import { PublicKey } from "@metaplex-foundation/js";
-import { Height } from "@mui/icons-material";
 import { createQR } from "@solana/pay";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
@@ -167,17 +165,6 @@ export default function PartProfile() {
 		reader.readAsDataURL(qrBlob);
 	};
 
-	useEffect(() => {
-		if (!router.isReady || !publicKey) return;
-		const { id, p_id } = router.query;
-
-		checkEvtRedeemed(id, p_id);
-
-		let miao = fetchParticipant(id as string, p_id as string);
-		miao.then(fetchNFT);
-		miao.then(setPDeets);
-	}, [router.isReady, publicKey]);
-
 	const checkEvtRedeemed = async (e_id: any, p_id: any) => {
 		const tokenAddress = (await getTokenAddrFromDB(e_id, p_id)) || "";
 		setTokenAddress(tokenAddress.S);
@@ -205,6 +192,21 @@ export default function PartProfile() {
 			location.reload();
 		}, 5000);
 	};
+
+	const init = async () => {
+		if (!router.isReady || !publicKey) return;
+		const { id, p_id } = router.query;
+
+		await checkEvtRedeemed(id, p_id);
+
+		let miao = fetchParticipant(id as string, p_id as string);
+		miao.then(fetchNFT);
+		miao.then(setPDeets);
+	};
+
+	useEffect(() => {
+		init();
+	}, [router.isReady, publicKey]);
 
 	return (
 		<div className="flex flex-col items-center pt-20 h-screen w-full">
@@ -273,7 +275,8 @@ export default function PartProfile() {
 					</div>
 				</>
 			)}
-			{publicKey && nftDeets && !isEvtNFTClaimed && (
+
+			{!isEvtNFTClaimed && nftDeets && (
 				<div className="flex flex-col items-center mb-10">
 					<div className="p-5 flex justify-center items-center">
 						<div className="flex justify-center items-center">
