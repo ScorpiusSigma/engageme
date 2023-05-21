@@ -18,6 +18,7 @@ type InputData = {
 	wallet: string;
 	token: string;
 	mintAccount: string;
+	eventId: string;
 };
 
 type GetResponse = {
@@ -37,7 +38,7 @@ async function post(
 	req: NextApiRequest,
 	res: NextApiResponse<PostResponse | PostError>
 ) {
-	const { account, token } = req.body as InputData;
+	const { account, token, eventId } = req.body as InputData;
 
 	if (!account) {
 		res.status(400).json({ error: "No wallet provided" });
@@ -49,13 +50,21 @@ async function post(
 		return;
 	}
 
+	if (!eventId) {
+		res.status(400).json({ error: "No event ID provided" });
+		return;
+	}
+
 	try {
 		const response = {
 			qrcode: generateQrCodeLink(
 				getBaseUrl(req),
 				new PublicKey(account),
 				new PublicKey(token),
-				new PublicKey(await getMintAddressOfToken(new PublicKey(token)))
+				new PublicKey(
+					await getMintAddressOfToken(new PublicKey(token))
+				),
+				eventId
 			),
 		};
 

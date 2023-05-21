@@ -32,14 +32,14 @@ import { GuestIdentityDriver } from "@metaplex-foundation/js";
 // Connection endpoint, switch to a mainnet RPC if using mainnet
 const ENDPOINT = clusterApiUrl("devnet");
 
-import { isRedeemed, redeem } from "@/utils";
+import { getBaseUrl, isRedeemed, redeem } from "@/utils";
 
 type GetResponse = {
 	label: string;
 	icon: string;
 };
 
-type InputData = { account: string; e_id: string };
+type InputData = { account: string; tokenAddress: string };
 
 export type PostResponse = {
 	transaction: string;
@@ -138,8 +138,8 @@ function get(res: NextApiResponse<GetResponse>) {
 
 // I tihnk this file should be api/[id]/redeem.ts  cuz redemption is event specific
 async function post(req: NextApiRequest, res: NextApiResponse) {
-	const { p_id } = req.query;
-	const { account, e_id } = req.body as InputData;
+	const { p_id, e_id } = req.query;
+	const { account, tokenAddress } = JSON.parse(req.body) as InputData;
 
 	if (!account) {
 		res.status(400).json({ error: "No account provided" });
@@ -147,16 +147,26 @@ async function post(req: NextApiRequest, res: NextApiResponse) {
 	}
 
 	if (!p_id || Array.isArray(p_id)) {
-		res.status(400).json({ error: "No uuid provided" });
+		res.status(400).json({ error: "No event id provided" });
 		return;
 	}
 
-	if (await isRedeemed(new PublicKey(account))) {
+	if (!e_id || Array.isArray(e_id)) {
+		res.status(400).json({ error: "No event id provided" });
+		return;
+	}
+
+	if (await isRedeemed(new PublicKey(tokenAddress))) {
 		res.status(500).json({ error: "NFT already redeemed!" });
 	}
 
 	try {
-		const resp = redeem(e_id, p_id, new PublicKey(account));
+		const resp = await redeem(
+			e_id,
+			p_id,
+			new PublicKey(account),
+			getBaseUrl(req)
+		);
 		res.status(200).json(resp);
 		return;
 	} catch (error) {

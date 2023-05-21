@@ -60,13 +60,14 @@ export const generateQrCodeLink = (
 	host: string,
 	walletAddress: PublicKey,
 	tokenAddress: PublicKey,
-	mintAccount: PublicKey
+	mintAccount: PublicKey,
+	eventId: string
 ): string => {
 	const hash = createHashAuth(walletAddress, tokenAddress);
 	return (
 		"solana:" +
 		encodeURIComponent(
-			`${host}/api/attendance-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${ORG_ACCOUNT}`
+			`${host}/api/attendance-auth?hash=${hash}&wallet=${walletAddress.toString()}&token=${tokenAddress.toString()}&mintAccount=${mintAccount}&orgAccount=${ORG_ACCOUNT}&eventId=${eventId}`
 		)
 	);
 };
@@ -75,23 +76,26 @@ export const isValidWallet = (wallet: PublicKey) => {
 	// Check the db if its inside
 };
 
-export async function isValidAttendanceTaker(e_id: string, account: PublicKey): Promise<boolean> {
+export async function isValidAttendanceTaker(
+	e_id: string,
+	account: PublicKey
+): Promise<boolean> {
 	const res = await fetch(`/api/events/${e_id}/is_atten_taker`, {
 		method: "POST",
 		body: JSON.stringify({
-			publicKey: account
+			publicKey: account,
 		}),
 		headers: new Headers({
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-		})
-	}
-	)
+			"Content-Type": "application/json",
+			Accept: "application/json",
+		}),
+	});
+
 	if (res.status != 200) {
-		return false
+		return false;
 	}
 
-	return (await res.json()).is_attendance_taker
+	return (await res.json()).is_attendance_taker;
 }
 
 export async function takeAttendance(
@@ -185,17 +189,15 @@ export async function isAttendanceTaken(userAccount: PublicKey) {
 	return false;
 }
 
-
-
 export async function getUnclaimedNfts(e_id: string) {
 	// get orgProxy by e_id first
 	let res = await fetch(`/api/events/${e_id}/get_org_proxy`);
 	if (res.status != 200) {
-		return null
+		return null;
 	}
 	const orgProxy: PublicKey = (await res.json()).orgProxy;
 
-	return await getNftsOfWallet(orgProxy)
+	return await getNftsOfWallet(orgProxy);
 }
 
 export async function getNftsOfWallet(wallet: PublicKey) {
@@ -211,49 +213,53 @@ export async function getNftsOfWallet(wallet: PublicKey) {
 	);
 	let tokenAddrs = tokenAccounts.value.map(({ account }) => {
 		return account.data.parsed.info.mint;
-	})
+	});
 	return tokenAddrs;
 }
 
 // I think can use my check if nft is owner code instead of this O(n) method
-export async function isRedeemed(recvWallet: PublicKey) {
-	const connection = new Connection(ENDPOINT);
-	const metaplex = new Metaplex(connection);
+// export async function isRedeemed(recvWallet: PublicKey) {
+// 	const connection = new Connection(ENDPOINT);
+// 	const metaplex = new Metaplex(connection);
 
-	// 1. Fetch the user's token accounts
-	const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-		recvWallet,
-		{
-			programId: TOKEN_PROGRAM_ID,
-		}
-	);
+// 	// 1. Fetch the user's token accounts
+// 	const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+// 		recvWallet,
+// 		{
+// 			programId: TOKEN_PROGRAM_ID,
+// 		}
+// 	);
 
-	// 2. Check if any of the token accounts belong to the desired collection address.
-	for (const account of tokenAccounts.value) {
-		// 2a. Get NFT token address.
-		const tokenAddress = account.account.data.parsed.info.mint;
+// 	// 2. Check if any of the token accounts belong to the desired collection address.
+// 	for (const account of tokenAccounts.value) {
+// 		// 2a. Get NFT token address.
+// 		const tokenAddress = account.account.data.parsed.info.mint;
 
-		let nft;
-		// 2b. Get NFT details with Metaplex.
-		try {
-			nft = await metaplex
-				.nfts()
-				.findByMint({ mintAddress: new PublicKey(tokenAddress) });
-		} catch (e) {
-			continue;
-		}
+// 		let nft;
+// 		// 2b. Get NFT details with Metaplex.
+// 		try {
+// 			nft = await metaplex
+// 				.nfts()
+// 				.findByMint({ mintAddress: new PublicKey(tokenAddress) });
+// 		} catch (e) {
+// 			continue;
+// 		}
 
-		// 2c. Get the collection address and verification.
-		const mintAddress = nft?.collection?.address.toString();
-		const isVerified = nft?.collection?.verified;
+// 		// 2c. Get the collection address and verification.
+// 		const mintAddress = nft?.collection?.address.toString();
+// 		const isVerified = nft?.collection?.verified;
 
-		// 2d. Check if the collection address is the correct one and if it is verified.
-		if (mintAddress === MINT_ACCOUNT && isVerified) {
-			return true;
-		}
-	}
+// 		// 2d. Check if the collection address is the correct one and if it is verified.
+// 		if (mintAddress === MINT_ACCOUNT && isVerified) {
+// 			return true;
+// 		}
+// 	}
 
-	return false;
+// 	return false;
+// }
+
+export async function isRedeemed(tokenAddress: PublicKey) {
+	return (await getNFTOwnerWallet(tokenAddress)) !== ORG_ACCOUNT;
 }
 
 export async function getNFTOwnerWallet(tokenAddress: PublicKey) {
@@ -265,10 +271,8 @@ export async function getNFTOwnerWallet(tokenAddress: PublicKey) {
 	const largestAccountInfo = await connection.getParsedAccountInfo(
 		largestAccounts.value[0].address
 	);
-	console.log("largestAccountInfo");
-	console.log(largestAccountInfo);
+
 	let owner = (largestAccountInfo?.value?.data as any).parsed.info.owner;
-	console.log(owner);
 	return owner;
 }
 
@@ -319,28 +323,34 @@ const getKeypair = (): Keypair => {
 	return keypair;
 };
 
+export const getTokenAddrFromDB = async (
+	e_id: string,
+	uuid: string,
+	baseUrl?: string
+) => {
+	let res;
 
-const getTokenAddrFromDB = async (e_id: string,
-	uuid: string) => {
-	const res = await fetch(`/api/events/${e_id}/${uuid}`)
-	if (res.status != 200){
+	switch (baseUrl) {
+		case undefined:
+			res = await fetch(`/api/events/${e_id}/${uuid}`);
+			break;
+		default:
+			res = await fetch(`${baseUrl}/api/events/${e_id}/${uuid}`);
+	}
+
+	if (res.status != 200) {
 		return "";
 	}
-	return (await res.json()).evt_token_addr
-}
+	return (await res.json()).evt_token_addr;
+};
 
 export async function redeem(
 	e_id: string,
-	uuid: string,
-	recvWallet: PublicKey
+	p_id: string,
+	recvWallet: PublicKey,
+	baseUrl: string
 ) {
-	// This will be the token address of the NFT
-	// get mint address from uuid
-	// TODO: Jun Leong
-	// Get nft mint address with e_id and uuid
-	// example code: const MINT = await (e_id, uuid)
-	// This means you will remove the line below
-	const MINT = getTokenAddrFromDB(e_id, uuid);//"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
+	const MINT = (await getTokenAddrFromDB(e_id, p_id, baseUrl)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
 
 	// connection
 	const connection = new Connection(ENDPOINT);
@@ -375,9 +385,19 @@ export async function redeem(
 
 	const transaction = new Transaction().add(instruction);
 
-	return await sendAndConfirmTransaction(connection, transaction, [
-		collectionOwnerKeypair,
-	]);
+	const res = await sendAndConfirmTransaction(
+		connection,
+		transaction,
+		[collectionOwnerKeypair],
+		{ commitment: "finalized" }
+	);
+
+	const message = `NFT of ${mintPublicKey} has been transferred to ${receiverTokenAccount.address}`;
+	console.log(message);
+
+	return {
+		message,
+	};
 }
 
 export function getBaseUrl(req: NextApiRequest) {
