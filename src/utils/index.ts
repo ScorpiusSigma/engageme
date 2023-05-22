@@ -1,4 +1,4 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, GetItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
 import { Metaplex, PublicKey, token } from "@metaplex-foundation/js";
 import {
 	TOKEN_PROGRAM_ID,
@@ -20,6 +20,18 @@ import { NextApiRequest } from "next";
 export const ENDPOINT = clusterApiUrl("devnet");
 export const MINT_ACCOUNT = "3qQ2nNoyKtgwgZQ9M9YW4LykE6k4mHd1atSbMUJP124z";
 export const ORG_ACCOUNT = "9uNgWMGhiGwMddgwgyE8T5FBTA4kZE4ry7bUxvVtnxor";
+
+
+export const ddbClient = new DynamoDBClient({});
+
+export const ddbTables = {
+	evt: "events",
+	evt_part: "evt_participant",
+	atten: "evt_attendance_taker",
+};
+
+export const tableCellStyle = " p-4 border-b border-gray-200 text-left ";
+
 
 function unixTimestampToDate(timestamp: number): Date {
 	return new Date(timestamp * 1000);
@@ -124,9 +136,6 @@ export async function takeAttendance(
 	attendaceTakerAccount: PublicKey,
 	userAccount: PublicKey
 ) {
-	// TODO: Jun Leong
-	// Check if the attendaceTakerAccount is a whitelisted wallet
-	// example:
 
 	if (!(await isValidAttendanceTaker(event_id, attendaceTakerAccount))) {
 		return {
@@ -461,12 +470,16 @@ export function getAttendanceMetric() {
 	return metric;
 }
 
+export const justDate = (date:Date) => {
+	return date.toISOString().substring(0, 10)
+}
+
 export const aggAttendanceMetric=(data: {
 	datetime: Date,
 	account: string
 }[]) => {
 	return Object.entries(data.map((el)=>{
-		return el.datetime.toISOString().substring(0, 10)//toLocaleDateString()
+		return justDate(el.datetime)//toLocaleDateString()
 	}).reduce((pv: any, cv: string)=>{
 		if (!pv.hasOwnProperty(cv)){
 			pv[cv] = 0
@@ -474,7 +487,7 @@ export const aggAttendanceMetric=(data: {
 		pv[cv] += 1 
 		return pv
 	},{})).map(([k,v]: [any, any])=>{
-		console.log(`k: ${k}`)
+		// console.log(`k: ${k}`)
 		return {
 			dateString: k,
 			date: new Date(k).getTime(),
@@ -493,17 +506,44 @@ export const aggAttendanceMetric=(data: {
 
 }
 
-export const airdrop = async (recvWallets: PublicKey[]) => {
+export const getParticipantByEidPK = async (e_id: string, publicKey: string): Promise<{ participant_id: string; }> => {
+	const client = ddbClient;
+	const { Items } = await client.send(
+		new ScanCommand({
+			TableName: ddbTables.evt_part,
+			FilterExpression: "#eid = :e_id and #pk = :pk_value",
+			ExpressionAttributeNames: {
+			  '#pk': 'wallet_addr',
+			  '#eid': 'event_id',
+			},
+			ExpressionAttributeValues: {
+			  ':e_id': {
+				'S': e_id
+			  },
+			  ':pk_value': {
+				'S': publicKey
+			  }
+			}
+		})
+	);
+	const toRet =(Items as any)[0]
+	return toRet
+}
+
+export const airdrop = async (e_id: string, recvWallets: PublicKey[]) => {
 	const connection = new Connection(ENDPOINT);
 	const collectionOwnerKeypair = getKeypair();
 
-	// For Jun Leong: This is the nft address, it should be different for each transfer
-	const MINT = "Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm"; // (await getTokenAddrFromDB(e_id, p_id)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
-
-	const mintPublicKey = new PublicKey(MINT);
-	const ownerPublicKey = collectionOwnerKeypair.publicKey;
+	console.log(`airdrop: ${recvWallets}`)
 
 	for (const recvWallet of recvWallets) {
+
+		const { participant_id } = await getParticipantByEidPK(e_id, recvWallet as unknown as string);
+
+		const MINT = (await getTokenAddrFromDB(e_id, participant_id)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
+
+		const mintPublicKey = new PublicKey(MINT);
+		const ownerPublicKey = collectionOwnerKeypair.publicKey;
 		const destPublicKey = recvWallet;
 
 		const senderTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -541,13 +581,3 @@ export const airdrop = async (recvWallets: PublicKey[]) => {
 		console.log(message);
 	}
 };
-
-export const ddbClient = new DynamoDBClient({});
-
-export const ddbTables = {
-	evt: "events",
-	evt_part: "evt_participant",
-	atten: "evt_attendance_taker",
-};
-
-export const tableCellStyle = " p-4 border-b border-gray-200 text-left ";

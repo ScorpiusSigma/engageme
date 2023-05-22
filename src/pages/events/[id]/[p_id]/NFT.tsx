@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import ReactCardFlip from "react-card-flip";
+import RedeemIcon from '@mui/icons-material/Redeem';
 
 const WalletMultiButton = dynamic(
 	async () =>
@@ -309,7 +310,13 @@ export default function PartProfile() {
 						className="bg-[#512da8] text-white text-base px-5 py-2 rounded-md m1 active:bg-[#2c2d30] hover:bg-[#2c2d30]"
 						onClick={redeemNft}
 					>
-						{loading ? "Redeeming..." : "Redeem"}
+						{loading ? (
+							<span>	Redeeming... </span>
+						) : (
+							<>
+								<span className="mr-1">Redeem</span><RedeemIcon />
+							</>
+						)}
 					</button>
 				</div>
 			)}

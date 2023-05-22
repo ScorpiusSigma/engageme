@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { aggAttendanceMetric, getAttendanceMetric } from "@/utils";
 
-type GetResponse = {
+type GetResponse = ({
 	datetime: Date;
-    account: string;
-}[];
+	account: string;
+}[] | { dateString: any; date: number; count: any; }[]);
 //toAgg
 // type GetResponseAgg = {
 // 	date: Date;
@@ -14,7 +14,7 @@ type GetResponse = {
 type GetResponseAgg = {
 	date: any;
 	// e_time: any;
-    count: any;
+	count: any;
 }[];
 
 type InputData = { account: string };
@@ -27,21 +27,26 @@ export type PostError = {
 async function get(req: NextApiRequest, res: NextApiResponse) {
 
 	const { isAgg } = req.query;
-	console.log(`isAgg: ${isAgg}`)
+	// console.log(`isAgg: ${isAgg}`)
 	let toAgg = false
 	if (isAgg == undefined) {
 		toAgg = true
 	} else {
 		toAgg = (isAgg as string).toLowerCase() == 'true'
 	}
-	console.log(`isAgg: ${toAgg}`)
+	// console.log(`isAgg: ${toAgg}`)
 
 	try {
-		let data = await getAttendanceMetric();
-		if (toAgg){
-			data = aggAttendanceMetric(data)
+		let data: {
+			datetime: Date;
+			account: string;
+		}[] = await getAttendanceMetric();
+		if (toAgg) {
+			let data2 = aggAttendanceMetric(data)
+			console.log(data2)
+			res.status(200).json(data2);
+			return
 		}
-		// const resp = await postImpl(new PublicKey(account));
 		res.status(200).json({
 			data,
 		});

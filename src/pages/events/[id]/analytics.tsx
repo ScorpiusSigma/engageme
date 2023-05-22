@@ -1,30 +1,64 @@
 import ClaimGraph from "@/components/ClaimGraph";
 import DailyAttenGraph from "@/components/DailyAttenGraph";
 import Navbar from "@/components/Navbar/Navbar";
-import { tableCellStyle } from "@/utils";
+import { airdrop, justDate, tableCellStyle } from "@/utils";
 import router from "next/router";
 import { useEffect, useState } from "react";
 import Datepicker from "react-tailwindcss-datepicker";
-import { DateValueType } from "react-tailwindcss-datepicker/dist/types";
+import { DateRangeType, DateValueType } from "react-tailwindcss-datepicker/dist/types";
 
 import FilterListIcon from '@mui/icons-material/FilterList';
-import { FormControl, IconButton, InputLabel, MenuItem, Select } from "@mui/material";
+import { FormControl, IconButton, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import RedeemIcon from '@mui/icons-material/Redeem';
+import Checkbox from '@mui/material/Checkbox';
+import { PublicKey } from "@solana/web3.js";
+
+
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 enum TableMode {
     daily,
     dayRange
 }
 
-const FilterMenu = ({mode}: {
-    mode: TableMode
+const FilterMenu = ({ mode, dateRange, onChange, minMaxDate }: {
+    mode: TableMode,
+    dateRange: DateRangeType
+    onChange: any
+    minMaxDate: DateRangeType
 }) => {
     let toDisplay = (
         <></>
     )
-    switch (mode){
+    switch (mode) {
         case TableMode.daily:
+            toDisplay = (
+                <div className="">
+                    <Datepicker
+                        startFrom={new Date(minMaxDate.startDate as string)}
+                        useRange={false}
+                        asSingle={true}
+                        minDate={minMaxDate.startDate}
+                        maxDate={minMaxDate.endDate}
+                        value={dateRange}
+                        onChange={onChange}
+                    />
+                </div>
+            )
             break;
         case TableMode.dayRange:
+            toDisplay = (
+                <div>
+                    <Datepicker
+                        startFrom={new Date(minMaxDate.startDate as string)}
+                        minDate={minMaxDate.startDate}
+                        maxDate={minMaxDate.endDate}
+                        value={dateRange}
+                        onChange={onChange}
+                    />
+                </div>
+            )
             break;
     }
     return toDisplay
@@ -34,14 +68,41 @@ const FilterMenu = ({mode}: {
 export default function AnalyticsPage() {
     const [attenMetric, setAttenMetrics] = useState<any[] | undefined>(undefined);
     const [dailyTotal, setDailyTotal] = useState<any[] | undefined>(undefined);
-
-    const [curDate, setCurDate] = useState<DateValueType>(null);
+    const [minMaxDate, setMinMaxDate] = useState<DateRangeType>({
+        startDate: new Date("1970-01-01"),
+        endDate: new Date(Date.now())
+    });
     const [menuActive, setMenuActive] = useState<Boolean>(false);
     const [filtPart, setFiltPart] = useState<any[]>([]);
+    const [filtRange, setFiltRange] = useState<DateRangeType>({
+        startDate: new Date("1970-01-01"),
+        endDate: new Date(Date.now())
+    })
+
+    let selectedP = new Set()
+    const [isAirdropping, setAirdropping] = useState(false)
+    // const [selectedP, setSelectP] = useState<Set<string>>(new Set())
+
     const [tableMode, setTableMode] = useState<TableMode>(TableMode.daily);
+
 
     const [pCnt, setPCnt] = useState<number | undefined>();
     const [claimCnt, setClaimCnt] = useState<number | undefined>();
+
+    const filterParticipants = (filtRange: DateRangeType) => {
+        if (!attenMetric) return
+        setFiltPart(attenMetric.filter((p: any) => {
+            const curDate = new Date(justDate(new Date(p.datetime)))
+            const sDate = new Date(filtRange.startDate as string)
+            const eDate = new Date(filtRange.endDate as string)
+            // console.log(`curDate: ${curDate}`)
+            // console.log(`sDate: ${sDate}`)
+            // console.log(`eDate: ${eDate}`)
+            const res = curDate >= sDate && curDate <= eDate
+            // console.log(`To filter? ${res}`)
+            return res
+        }))
+    }
 
     const fetchParticipantsByEvent = async () => {
         const { id } = router.query;
@@ -66,7 +127,8 @@ export default function AnalyticsPage() {
         }
         const data = (await res.json()).data
         setAttenMetrics(data)
-        console.log(data)
+        setFiltPart(data)
+        // console.log(data)
     }
 
     const fetchAttenAgg = async () => {
@@ -74,9 +136,21 @@ export default function AnalyticsPage() {
         if (res.status != 200) {
             return
         }
-        const data = (await res.json()).data
+        const data = (await res.json())
+        const minDate = new Date(data[0].dateString)
+        const maxDate = new Date(data[data.length - 1].dateString)
         setDailyTotal(data)
-        // console.log(data)
+
+        setFiltRange({
+            startDate: minDate,
+            endDate: maxDate,
+        })
+        const minDate2 = new Date()
+        minDate2.setDate(minDate.getDate() - 1);
+        setMinMaxDate({
+            startDate: minDate2,
+            endDate: maxDate
+        })
     }
 
     useEffect(() => {
@@ -90,9 +164,9 @@ export default function AnalyticsPage() {
             <Navbar />
 
             <div className="relative pt-16 mx-4">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center my-2">
                     {dailyTotal != undefined ? (
-                        <div>
+                        <div className=" w-1/2 h-1/2">
                             <h2> Daily Attendance </h2>
                             <DailyAttenGraph width={600} height={400} data={dailyTotal} className="" />
                         </div>
@@ -101,7 +175,7 @@ export default function AnalyticsPage() {
                     )}
                     {
                         pCnt != undefined && claimCnt != undefined && (
-                            <div className=" w-1/2 h-1/2"
+                            <div
                                 style={{
                                     width: 400,
                                     height: 400
@@ -111,10 +185,10 @@ export default function AnalyticsPage() {
                                 <ClaimGraph data={
                                     [
                                         {
-                                            name: "Not Claimed", value: 10//pCnt-claimCnt
+                                            name: "Not Claimed", value: pCnt - claimCnt//pCnt-claimCnt
                                         },
                                         {
-                                            name: "Claimed", value: 10// claimCnt
+                                            name: "Claimed", value: claimCnt// claimCnt
                                         }
                                     ]
                                 } />
@@ -123,41 +197,85 @@ export default function AnalyticsPage() {
                     }
 
                 </div>
-                <div className=" rounded-lg bg-white mt-4 shadow-md p-4">
+                <div className=" rounded-lg bg-white my-4 shadow-md p-4">
                     <div className="mb-4 flex justify-between  ">
                         <div className=" text-xl font-semibold">
                             Participants
                         </div>
-                        <IconButton color={menuActive ? "primary" : "default"} onClick={() => {
-                            setMenuActive(!menuActive);
-                        }}>
-                            <FilterListIcon />
-                        </IconButton>
+                        <div>
+                            <IconButton color={menuActive ? "primary" : "default"} onClick={() => {
+                                setMenuActive(!menuActive);
+                            }}>
+                                <FilterListIcon />
+                            </IconButton>
+                            <IconButton className=" " disabled={isAirdropping} onClick={async () => {
+                                setAirdropping(true)
+                                toast.promise(
+                                    async () => {
+                                        await airdrop(router.query.id as string,(Array.from(selectedP) as PublicKey[]))
+                                        setAirdropping(false)
+                                    }
+                                    ,
+                                    {
+                                        pending: 'Airdropping in progress~',
+                                        success: '🦄 Airdrop is a success!',
+                                        error: 'Airdropping failed 🤯'
+                                    }
+                                )
+                                // toast('🦄 Airdropping in progress~', {
+                                //     position: "top-right",
+                                //     autoClose: 5000,
+                                //     hideProgressBar: false,
+                                //     closeOnClick: true,
+                                //     pauseOnHover: true,
+                                //     draggable: true,
+                                //     progress: undefined,
+                                //     theme: "light",
+                                //     });
+                                // // let res = await airdrop((Array.from(selectedP) as PublicKey[]))
+                                // setTimeout(()=>{
+                                //     toast.success('🦄 Airdrop is a success!', {
+                                //         position: "top-right",
+                                //         autoClose: 5000,
+                                //         hideProgressBar: false,
+                                //         closeOnClick: true,
+                                //         pauseOnHover: true,
+                                //         draggable: true,
+                                //         progress: undefined,
+                                //         theme: "light",
+                                //         });
+                                // },3000)
+                                setAirdropping(false)
+                            }}>
+                                <RedeemIcon />
+                            </IconButton>
+                        </div>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex justify-between h-full">
                         {menuActive && (
-                            <div className=" w-80 h-full">
-                                <div>
-                                    <div>View Modes</div>
+                            <div className=" min-w-64 h-full flex-none pt-14 mr-4">
+                                <div className="h-full">
                                     <FormControl fullWidth>
-                                    <InputLabel id="demo-simple-select-label">Age</InputLabel>
-                                    <Select
-                                        labelId="demo-simple-select-label"
-                                        id="demo-simple-select"
-                                        value={age}
-                                        label="Age"
-                                        onChange={handleChange}
-                                    >
-                                        <MenuItem value={10}>Ten</MenuItem>
-                                        <MenuItem value={20}>Twenty</MenuItem>
-                                        <MenuItem value={30}>Thirty</MenuItem>
-                                    </Select>
+                                        <InputLabel id="demo-simple-select-label">View Modes</InputLabel>
+                                        <Select
+                                            labelId="demo-simple-select-label"
+                                            id="demo-simple-select"
+                                            value={tableMode as unknown as string}
+                                            label="View Modes"
+                                            onChange={(e: SelectChangeEvent) => {
+                                                setTableMode(e.target.value as unknown as TableMode)
+                                            }}
+                                        >
+                                            <MenuItem value={TableMode.daily}>Daily</MenuItem>
+                                            <MenuItem value={TableMode.dayRange}>Range of dates</MenuItem>
+                                        </Select>
                                     </FormControl>
                                 </div>
                                 {/* Filter params */}
-                                <div>
-                                    {}
-                                </div>
+                                <FilterMenu mode={tableMode} dateRange={filtRange} minMaxDate={minMaxDate} onChange={(newRange: DateRangeType) => {
+                                    setFiltRange(newRange)
+                                    filterParticipants(newRange)
+                                }} />
                             </div>
                         )}
                         <table className="w-full">
@@ -169,13 +287,24 @@ export default function AnalyticsPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {attenMetric && attenMetric.length > 0 ? (
+                                {filtPart && filtPart.length > 0 ? (
                                     <>
-                                        {attenMetric.map(
+                                        {filtPart.map(
                                             ({ account, datetime }, idx) => (
                                                 <tr key={idx}>
-                                                    <td className={tableCellStyle}>
-                                                        {account}
+                                                    <td className={tableCellStyle + " relative flex items-center justify-between"}>
+                                                        <span>{account}</span>
+                                                        {/* absolute right-2 top-0 */}
+                                                        <Checkbox onChange={(event: any) => {
+                                                            console.log(`event`)
+                                                            console.log(event)
+                                                            const isChecked = event.target.checked
+                                                            if (isChecked) {
+                                                                selectedP.add(account)
+                                                            } else {
+                                                                selectedP.delete(account)
+                                                            }
+                                                        }} />
                                                     </td>
                                                 </tr>
                                             )
@@ -201,7 +330,20 @@ export default function AnalyticsPage() {
 
 
             </div>
-
+            <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+            />
+            {/* Same as */}
+            <ToastContainer />
 
         </div>
     )

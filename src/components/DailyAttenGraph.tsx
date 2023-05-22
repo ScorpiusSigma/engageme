@@ -106,8 +106,8 @@ export default function DailyAttenGraph({
     //     { date: new Date(2019, 6, 21).getTime(), count: 6000 },
     //     { date: new Date(2019, 6, 28).getTime(), count: 9000 }
     // ];
-    console.log("data")
-    console.log(data)
+    // console.log("data")
+    // console.log(data)
     let domain: any[] = []
     let ticks: any[] = []
     if(data != undefined && data != null){
