@@ -1,4 +1,14 @@
 import ClaimGraph from "@/components/ClaimGraph";
+
+// import dynamic from "next/dynamic";
+
+
+// const ClaimGraph = dynamic(
+// 	async () =>
+// 		(await import("@/components/ClaimGraph")),
+// 	{ ssr: false }
+// );
+
 import DailyAttenGraph from "@/components/DailyAttenGraph";
 import Navbar from "@/components/Navbar/Navbar";
 import { airdrop, justDate, tableCellStyle } from "@/utils";
@@ -16,12 +26,10 @@ import { PublicKey } from "@solana/web3.js";
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
 enum TableMode {
     daily,
     dayRange
 }
-
 const FilterMenu = ({ mode, dateRange, onChange, minMaxDate }: {
     mode: TableMode,
     dateRange: DateRangeType
@@ -86,8 +94,8 @@ export default function AnalyticsPage() {
     const [tableMode, setTableMode] = useState<TableMode>(TableMode.daily);
 
 
-    const [pCnt, setPCnt] = useState<number | undefined>();
-    const [claimCnt, setClaimCnt] = useState<number | undefined>();
+    const [pCnt, setPCnt] = useState<number | null>(null);
+    const [claimCnt, setClaimCnt] = useState<number | null>(null);
 
     const filterParticipants = (filtRange: DateRangeType) => {
         if (!attenMetric) return
@@ -112,7 +120,10 @@ export default function AnalyticsPage() {
             return;
         }
         let data = await res.json();
-
+        console.log("Fetch countns0")
+        console.log(data)
+        console.log(pCnt)
+        console.log(claimCnt)
         setPCnt(data.length)
         setClaimCnt(data.filter((el: any) => {
             return 'wallet_addr' in el && el.wallet_addr.length > 0
@@ -164,7 +175,7 @@ export default function AnalyticsPage() {
             <Navbar />
 
             <div className="relative pt-16 mx-4">
-                <div className="flex justify-between items-center my-2">
+                <div className="flex justify-between items-center my-4 h-2/5">
                     {dailyTotal != undefined ? (
                         <div className=" w-1/2 h-1/2">
                             <h2> Daily Attendance </h2>
@@ -174,25 +185,29 @@ export default function AnalyticsPage() {
                         <div> No attendance taken yet </div>
                     )}
                     {
-                        pCnt != undefined && claimCnt != undefined && (
-                            <div
-                                style={{
-                                    width: 400,
-                                    height: 400
-                                }}
-                            >
-                                <h2>Claim percentage!</h2>
-                                <ClaimGraph data={
-                                    [
-                                        {
-                                            name: "Not Claimed", value: pCnt - claimCnt//pCnt-claimCnt
-                                        },
-                                        {
-                                            name: "Claimed", value: claimCnt// claimCnt
-                                        }
-                                    ]
-                                } />
+                        (pCnt != null && claimCnt != null && pCnt > 0) ? (
+                            <div>
+                                <h2 className=" text-center">Claim percentage!</h2>
+                                <div
+                                    style={{
+                                        width: 400,
+                                        height: 400//"100%"
+                                    }}
+                                >
+                                    <ClaimGraph data={
+                                        [
+                                            {
+                                                name: "Not Claimed", value: pCnt - claimCnt//pCnt-claimCnt
+                                            },
+                                            {
+                                                name: "Claimed", value: claimCnt// claimCnt
+                                            }
+                                        ]
+                                    } />
+                                </div>
                             </div>
+                        ) : (
+                            <div>No claim data so far</div>
                         )
                     }
 
@@ -211,10 +226,11 @@ export default function AnalyticsPage() {
                             <IconButton className=" " disabled={isAirdropping} onClick={async () => {
                                 setAirdropping(true)
                                 toast.promise(
-                                    async () => {
-                                        await airdrop(router.query.id as string,(Array.from(selectedP) as PublicKey[]))
+                                    new Promise(async () => {
+                                        const selected = Array.from(selectedP)
+                                        await airdrop(router.query.id as string, (selected as PublicKey[]))
                                         setAirdropping(false)
-                                    }
+                                    })
                                     ,
                                     {
                                         pending: 'Airdropping in progress~',

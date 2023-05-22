@@ -111,14 +111,14 @@ export default function DailyAttenGraph({
     let domain: any[] = []
     let ticks: any[] = []
     if(data != undefined && data != null){
-        console.log(data[0])
+        // console.log(data[0])
         const startDate = new Date(data[0].date);
         const endDate = new Date(data[1].date);
         domain = [(dataMin: any) => dataMin, () => endDate.getTime()];
         ticks = getTicks(startDate, endDate, 5);
-        console.log(`ticks: ${ticks}`)
-        console.log("Graph data")
-        console.log(data)
+        // console.log(`ticks: ${ticks}`)
+        // console.log("Graph data")
+        // console.log(data)
     }
 
     // if (className == null) {

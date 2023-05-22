@@ -29,8 +29,13 @@ export default function ClaimGraph({
 }: {
   data: any[]
 }) {
-  // console.log("Claim graog data")
-  // console.log(data)
+  console.log("Claim graog data")
+  console.log(data)
+  if (data == undefined || data.length == 0){
+    return (
+      <></>
+    )
+  }
   return (
     <ResponsiveContainer width="100%" height="100%">
       <PieChart width={400} height={400}>

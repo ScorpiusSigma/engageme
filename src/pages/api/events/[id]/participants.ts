@@ -1,4 +1,4 @@
-import { ddbClient, ddbTables } from "@/utils";
+import { ddbClient, ddbTables, getParticipantByEidPK } from "@/utils";
 import {
   PutItemCommand,
   GetItemCommand,
@@ -24,7 +24,7 @@ type PostError = {
   error: string;
 };
 
-type GetResponse = Participant[]
+type GetResponse = Participant[] | { participant_id: string; }
 
 type GetError = {
   error: string;
@@ -172,15 +172,21 @@ async function get(
   req: NextApiRequest,
   res: NextApiResponse<GetResponse | GetError>
 ) {
-  const { id } = req.query; // Retrieve the square bracket param
+  const { id, wallet_addr } = req.query; // Retrieve the square bracket param
 
   if (id == undefined) {
     res.status(400);
     return;
   }
   try {
-    const output = await getImpl(id as string);
-    res.status(200).json(output);
+    if (wallet_addr == undefined){
+
+      const output = await getImpl(id as string);
+      res.status(200).json(output);
+    } else {
+      const output = await getParticipantByEidPK(id as string, wallet_addr as string);
+      res.status(200).json(output);
+    }
     return;
   } catch (error) {
     res.status(500).json({ error: "Error Getting Participants" });

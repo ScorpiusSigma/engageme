@@ -538,7 +538,11 @@ export const airdrop = async (e_id: string, recvWallets: PublicKey[]) => {
 
 	for (const recvWallet of recvWallets) {
 
-		const { participant_id } = await getParticipantByEidPK(e_id, recvWallet as unknown as string);
+		const tmp = await fetch(`/api/events/${e_id}/participants?wallet_addr=${recvWallet}`)
+		if (tmp.status != 200) throw Error
+
+		const { participant_id } = await tmp.json()
+		console.log(`${participant_id} has wallet ${recvWallet}`)
 
 		const MINT = (await getTokenAddrFromDB(e_id, participant_id)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
 
