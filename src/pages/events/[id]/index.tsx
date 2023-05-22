@@ -219,6 +219,14 @@ export default function Event() {
 							<div className=" text-xl font-semibold">
 								Participants
 							</div>
+							<div>
+								<span>Total: </span>{20}
+							</div>
+
+							<div>
+								<span>Claimed: </span>{2}
+							</div>
+
 							<div className=" text-left mt-4">
 								{/* <div>Upload participant details</div> */}
 								<Button
@@ -257,7 +265,7 @@ export default function Event() {
 							<div className="flex justify-between items-center mb-2">
 								<p className=" font-bold text-lg">Attendance metrics</p>
 								<div className="group text-slate-500 hover:text-slate-300 ease-linear duration-300">
-									<Link className=" line" href={`events/${router.query.id}/analytics`}>
+									<Link className=" line" href={`/events/${router.query.id}/analytics`}>
 										<span className="mr-1">Anaylze</span>
 										<ArrowForwardIcon sx={{
 											width: 16,
