@@ -10,6 +10,7 @@ import {
 	TextField,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { Router, useRouter } from "next/router";
@@ -20,6 +21,7 @@ import events from "..";
 import * as uuid from "uuid";
 import { getUnclaimedNfts, tableCellStyle } from "@/utils";
 import DailyAttenGraph from "@/components/DailyAttenGraph";
+import Link from "next/link";
 
 // import { usePapaParse } from "react-papaparse";
 
@@ -46,7 +48,7 @@ export default function Event() {
 		name: "",
 	});
 
-	const [attenMetric, setAttenMetrics] = useState<any[] | null>(null);
+	const [attenMetric, setAttenMetrics] = useState<any[] | undefined>(undefined);
 
 	const getAttenTakers = async (e_id: string) => {
 		const res = await fetch(`/api/events/${e_id}/atten_takers`);
@@ -182,7 +184,7 @@ export default function Event() {
 		if (res.status != 200) {
 			return
 		}
-		setAttenMetrics(await res.json())
+		setAttenMetrics((await res.json()).data)
 	}
 
 	useEffect(() => {
@@ -251,11 +253,26 @@ export default function Event() {
 								)}
 							</div>
 						</div>
-						<div>
+						<div className=" ">
+							<div className="flex justify-between items-center mb-2">
+								<p className=" font-bold text-lg">Attendance metrics</p>
+								<div className="group text-slate-500 hover:text-slate-300 ease-linear duration-300">
+									<Link className=" line" href={`events/${router.query.id}/analytics`}>
+										<span className="mr-1">Anaylze</span>
+										<ArrowForwardIcon sx={{
+											width: 16,
+											height: 16
+										}} />
+									</Link>
+									<div className=" border-slate-500 group-hover:border-slate-300 border-b ease-linear duration-300"/>
+								</div>
+							</div>
 
-							<p>Attendance metrics</p>
-							{attenMetric != null && (
+							{/* <DailyAttenGraph width={600} height={400} data={attenMetric} className="" /> */}
+							{attenMetric != undefined ? (
 								<DailyAttenGraph width={600} height={400} data={attenMetric} className="" />
+							) : (
+								<div> No attendance taken yet </div>
 							)}
 						</div>
 					</div>

@@ -476,10 +476,19 @@ export const aggAttendanceMetric=(data: {
 	},{})).map(([k,v]: [any, any])=>{
 		console.log(`k: ${k}`)
 		return {
-			date: k,
-			e_time: new Date(k).getTime(),
+			dateString: k,
+			date: new Date(k).getTime(),
 			count: v
 		}
+	}).sort((a,b)=>{
+		if (a.date > b.date){
+			return 1
+		}
+		
+		if (a.date < b.date){
+			return -1
+		}
+		return 0
 	})
 
 }

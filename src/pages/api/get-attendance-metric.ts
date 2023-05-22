@@ -13,7 +13,7 @@ type GetResponse = {
 
 type GetResponseAgg = {
 	date: any;
-	e_time: any;
+	// e_time: any;
     count: any;
 }[];
 
