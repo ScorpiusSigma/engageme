@@ -256,11 +256,13 @@ export default function AnalyticsPage() {
                             <IconButton className=" " disabled={isAirdropping} onClick={async () => {
                                 setAirdropping(true)
                                 toast.promise(
-                                    new Promise(async () => {
+                                    async () => {
                                         const selected = Array.from(selectedP)
+                                        console.log("airdropong")
                                         await airdrop(router.query.id as string, (selected as PublicKey[]))
+                                        console.log("airdrop done")
                                         setAirdropping(false)
-                                    })
+                                    }
                                     ,
                                     {
                                         pending: 'Airdropping in progress~',

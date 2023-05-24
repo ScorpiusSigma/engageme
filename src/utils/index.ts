@@ -529,8 +529,12 @@ export const getParticipantByEidPK = async (e_id: string, publicKey: string): Pr
 	const toRet =(Items as any)[0]
 	return toRet
 }
-
+function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 export const airdrop = async (e_id: string, recvWallets: PublicKey[]) => {
+	await sleep(1000);
+	return
 	const connection = new Connection(ENDPOINT);
 	const collectionOwnerKeypair = getKeypair();
 
