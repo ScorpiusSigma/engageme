@@ -32,6 +32,7 @@ type GetError = {
 
 
 async function getParticipants(e_id: string) {
+  console.log(`getParticipants for event: ${e_id}`)
   const client = ddbClient;
   const { Items } = await client.send(
     new ScanCommand({

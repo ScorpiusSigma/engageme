@@ -181,10 +181,12 @@ export default function Event() {
 		// const { id } = router.query; // should get by event id
 
 		const res = await fetch(`/api/get-attendance-metric?isAgg=true`);
+		console.log(`fetchAttendanceMetric res: ${res.status}`)
+		console.log(res)
 		if (res.status != 200) {
 			return
 		}
-		setAttenMetrics((await res.json()).data)
+		setAttenMetrics((await res.json()))
 	}
 
 	useEffect(() => {
@@ -264,7 +266,7 @@ export default function Event() {
 						<div className=" ">
 							<div className="flex justify-between items-center mb-2">
 								<p className=" font-bold text-lg">Attendance metrics</p>
-								<div className="group text-slate-500 hover:text-slate-300 ease-linear duration-300">
+								<div className="group text-slate-500 hover:text-slate-300 ease-linear duration-300 ml-4">
 									<Link className=" line" href={`/events/${router.query.id}/analytics`}>
 										<span className="mr-1">Anaylze</span>
 										<ArrowForwardIcon sx={{
@@ -272,7 +274,7 @@ export default function Event() {
 											height: 16
 										}} />
 									</Link>
-									<div className=" border-slate-500 group-hover:border-slate-300 border-b ease-linear duration-300"/>
+									<div className=" border-slate-500 group-hover:border-slate-300 border-b ease-linear duration-300" />
 								</div>
 							</div>
 
@@ -285,49 +287,51 @@ export default function Event() {
 						</div>
 					</div>
 					{participants != null && participants.length > 0 ? (
-						<Table className="">
-							<TableHead className="">
-								<TableRow className="">
-									{Object.entries(participants[0]).map(
-										([k, v]: [any, any], j) => {
-											// if (k == "evnet_id") { return }
-											return (
-												<TableCell key={j}>
-													{k}
-												</TableCell>
-											);
-										}
-									)}
-								</TableRow>
-							</TableHead>
-							<TableBody>
-								{participants.map((x: any, i) => (
-									<TableRow
-										key={x["participant_id"]}
-										className=" cursor-pointer hover:bg-slate-300"
-										onClick={(e) => {
-											router.push(
-												`/events/${x["evnet_id"]}`
-											);
-										}}
-									>
-										{Object.entries(x).map(
+						<div className="w-full overflow-x-auto">
+							<Table className="w-full">
+								<TableHead className="">
+									<TableRow className="">
+										{Object.entries(participants[0]).map(
 											([k, v]: [any, any], j) => {
-												if (k == "evnet_id") {
-													return;
-												}
-
+												// if (k == "evnet_id") { return }
 												return (
 													<TableCell key={j}>
-														{v}
+														{k}
 													</TableCell>
 												);
 											}
 										)}
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
+								</TableHead>
+								<TableBody>
+									{participants.map((x: any, i) => (
+										<TableRow
+											key={x["participant_id"]}
+											className=" cursor-pointer hover:bg-slate-300"
+											onClick={(e) => {
+												router.push(
+													`/events/${x["evnet_id"]}`
+												);
+											}}
+										>
+											{Object.entries(x).map(
+												([k, v]: [any, any], j) => {
+													if (k == "evnet_id") {
+														return;
+													}
+
+													return (
+														<TableCell key={j}>
+															{v}
+														</TableCell>
+													);
+												}
+											)}
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
 					) : (
 						<div>No participants present yet!</div>
 					)}

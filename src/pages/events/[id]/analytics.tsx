@@ -12,7 +12,7 @@ import ClaimGraph from "@/components/ClaimGraph";
 import DailyAttenGraph from "@/components/DailyAttenGraph";
 import Navbar from "@/components/Navbar/Navbar";
 import { airdrop, justDate, tableCellStyle } from "@/utils";
-import router from "next/router";
+import router, { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Datepicker from "react-tailwindcss-datepicker";
 import { DateRangeType, DateValueType } from "react-tailwindcss-datepicker/dist/types";
@@ -74,6 +74,7 @@ const FilterMenu = ({ mode, dateRange, onChange, minMaxDate }: {
 
 
 export default function AnalyticsPage() {
+	const router = useRouter();
     const [attenMetric, setAttenMetrics] = useState<any[] | undefined>(undefined);
     const [dailyTotal, setDailyTotal] = useState<any[] | undefined>(undefined);
     const [minMaxDate, setMinMaxDate] = useState<DateRangeType>({
@@ -94,22 +95,46 @@ export default function AnalyticsPage() {
     const [tableMode, setTableMode] = useState<TableMode>(TableMode.daily);
 
 
-    const [pCnt, setPCnt] = useState<number | null>(null);
-    const [claimCnt, setClaimCnt] = useState<number | null>(null);
+    const [pCnt, setPCnt] = useState<number>(-1);
+    const [claimCnt, setClaimCnt] = useState<number>(-1);
 
     const filterParticipants = (filtRange: DateRangeType) => {
         if (!attenMetric) return
-        setFiltPart(attenMetric.filter((p: any) => {
-            const curDate = new Date(justDate(new Date(p.datetime)))
+        let toFilter: any = {}
+        attenMetric.map((el: {datetime: any, account: string})=>{
+            if (!(el.account in toFilter)){
+                toFilter[el.account] = new Set()
+            } 
+            toFilter[el.account].add(justDate(new Date(el.datetime)))
+        })
+        console.log(`toFilter`)
+        console.log(toFilter)
+        let result = Object.entries(toFilter).filter(([k,v]: [any,any]) => {
+            console.log(k)
+            console.log(v)
+            // const curDate = new Date(justDate(new Date(p.datetime)))
             const sDate = new Date(filtRange.startDate as string)
             const eDate = new Date(filtRange.endDate as string)
             // console.log(`curDate: ${curDate}`)
-            // console.log(`sDate: ${sDate}`)
-            // console.log(`eDate: ${eDate}`)
-            const res = curDate >= sDate && curDate <= eDate
+            console.log(`sDate: ${sDate}`)
+            console.log(`eDate: ${eDate}`)
+            for (let d = sDate; d <= eDate; d.setDate(d.getDate() + 1)){
+                console.log(`justDate(d): ${justDate(d)}`)
+                console.log(v.has(justDate(d)))
+                if (!(v.has(justDate(d)))) {
+                    return false
+                }
+            }
+            // const res = curDate >= sDate && curDate <= eDate
             // console.log(`To filter? ${res}`)
-            return res
-        }))
+            return true
+        }).map((el:any[])=>{
+            return {
+                account: el[0]
+            }
+        })
+        console.log(result)
+        setFiltPart(result)
     }
 
     const fetchParticipantsByEvent = async () => {
@@ -125,9 +150,11 @@ export default function AnalyticsPage() {
         console.log(pCnt)
         console.log(claimCnt)
         setPCnt(data.length)
-        setClaimCnt(data.filter((el: any) => {
+        let filterLen = data.filter((el: any) => {
             return 'wallet_addr' in el && el.wallet_addr.length > 0
-        }).length)
+        }).length
+        console.log(`filterLen: ${filterLen}`)
+        setClaimCnt(filterLen)
 
     };
 
@@ -137,6 +164,8 @@ export default function AnalyticsPage() {
             return
         }
         const data = (await res.json()).data
+        // console.log("fetchAttendanceMetric")
+        // console.log(data)
         setAttenMetrics(data)
         setFiltPart(data)
         // console.log(data)
@@ -165,10 +194,11 @@ export default function AnalyticsPage() {
     }
 
     useEffect(() => {
+        if (!router.isReady) return
         fetchAttendanceMetric()
         fetchAttenAgg()
         fetchParticipantsByEvent()
-    }, [])
+    }, [router.isReady])
 
     return (
         <div className="h-screen w-full bg-slate-100 dark:bg-slate-800 dark:text-white font-robo relative">
@@ -177,17 +207,17 @@ export default function AnalyticsPage() {
             <div className="relative pt-16 mx-4">
                 <div className="flex justify-between items-center my-4 h-2/5">
                     {dailyTotal != undefined ? (
-                        <div className=" w-1/2 h-1/2">
-                            <h2> Daily Attendance </h2>
+                        <div className=" w-1/2 h-1/2 ">
+                            <h2 className="text-lg font-semibold mb-4"> Daily Attendance </h2>
                             <DailyAttenGraph width={600} height={400} data={dailyTotal} className="" />
                         </div>
                     ) : (
                         <div> No attendance taken yet </div>
                     )}
                     {
-                        (pCnt != null && claimCnt != null && pCnt > 0) ? (
+                        (pCnt != -1 && claimCnt != -1) ? (
                             <div>
-                                <h2 className=" text-center">Claim percentage!</h2>
+                                <h2 className=" text-center text-lg font-semibold">Claim percentage</h2>
                                 <div
                                     style={{
                                         width: 400,
@@ -197,10 +227,10 @@ export default function AnalyticsPage() {
                                     <ClaimGraph data={
                                         [
                                             {
-                                                name: "Not Claimed", value: pCnt - claimCnt//pCnt-claimCnt
+                                                name: "Not Claimed", value: 52//pCnt-claimCnt
                                             },
                                             {
-                                                name: "Claimed", value: claimCnt// claimCnt
+                                                name: "Claimed", value: 43// claimCnt
                                             }
                                         ]
                                     } />
@@ -294,52 +324,51 @@ export default function AnalyticsPage() {
                                 }} />
                             </div>
                         )}
-                        <table className="w-full">
-                            <thead className="w-full text-left">
-                                <tr>
-                                    <th className={tableCellStyle + " w-1/2"}>
-                                        Account
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filtPart && filtPart.length > 0 ? (
-                                    <>
-                                        {filtPart.map(
-                                            ({ account, datetime }, idx) => (
-                                                <tr key={idx}>
-                                                    <td className={tableCellStyle + " relative flex items-center justify-between"}>
-                                                        <span>{account}</span>
-                                                        {/* absolute right-2 top-0 */}
-                                                        <Checkbox onChange={(event: any) => {
-                                                            console.log(`event`)
-                                                            console.log(event)
-                                                            const isChecked = event.target.checked
-                                                            if (isChecked) {
-                                                                selectedP.add(account)
-                                                            } else {
-                                                                selectedP.delete(account)
-                                                            }
-                                                        }} />
-                                                    </td>
-                                                </tr>
-                                            )
-                                        )}
-                                    </>
-                                ) : (
+                        {filtPart && filtPart.length > 0 ? (
+                            <table className="w-full">
+                                <thead className="w-full text-left">
+                                    <tr>
+                                        <th className={tableCellStyle + " w-1/2"}>
+                                            Account
+                                        </th>
+                                    </tr>
+                                </thead>
 
-                                    <div
-                                        className={
-                                            tableCellStyle + "border-none"
-                                        }
-                                    >
-                                        There are no attendees yet :(
-                                    </div>
+                                <tbody>
+                                    {filtPart.map(
+                                        ({ account }, idx) => (
+                                            <tr key={idx}>
+                                                <td className={tableCellStyle + " relative flex items-center justify-between"}>
+                                                    <span>{account}</span>
+                                                    {/* absolute right-2 top-0 */}
+                                                    <Checkbox onChange={(event: any) => {
+                                                        console.log(`event`)
+                                                        console.log(event)
+                                                        const isChecked = event.target.checked
+                                                        if (isChecked) {
+                                                            selectedP.add(account)
+                                                        } else {
+                                                            selectedP.delete(account)
+                                                        }
+                                                    }} />
+                                                </td>
+                                            </tr>
+                                        )
+                                    )}
+                                </tbody>
+                            </table>
+                        ) : (
 
-                                )}
+                            <div
+                                className={
+                                    tableCellStyle + "border-none"
+                                }
+                            >
+                                There are no attendees yet :(
+                            </div>
 
-                            </tbody>
-                        </table>
+                        )}
+
                     </div>
                 </div>
 
