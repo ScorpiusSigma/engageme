@@ -94,6 +94,15 @@ const gen_fake_data = (atLeast: number) => {
 			to_ret[rand_k] = new Set([rand_v])
 		}
 	}
+
+	const this_one_dude = rand_addr();
+	for (const day of FAKE_DAYS){
+		if (!(day in to_ret)){
+			to_ret[day] = new Set()
+		}
+		to_ret[day].add(this_one_dude)
+	}
+
 	// console.log(to_ret)
 	return Object.entries(to_ret).reduce((pv: any, [k, v]: [any, any]) => {
 			let to_extend = []
