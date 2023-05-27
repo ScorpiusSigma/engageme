@@ -56,6 +56,7 @@ async function post(
 			),
 		};
 
+		console.log(response);
 		res.status(200).json(response);
 		return;
 	} catch (error) {

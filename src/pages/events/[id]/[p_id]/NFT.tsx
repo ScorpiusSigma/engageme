@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import ReactCardFlip from "react-card-flip";
-import RedeemIcon from '@mui/icons-material/Redeem';
+import RedeemIcon from "@mui/icons-material/Redeem";
 
 const WalletMultiButton = dynamic(
 	async () =>
@@ -188,9 +188,10 @@ export default function PartProfile() {
 			}),
 		});
 
-		setTimeout(() => {
-			location.reload();
-		}, 5000);
+		await checkEvtRedeemed(id, p_id);
+		let miao = fetchParticipant(id as string, p_id as string);
+		miao.then(fetchNFT);
+		miao.then(setPDeets);
 	};
 
 	const init = async () => {
@@ -311,10 +312,11 @@ export default function PartProfile() {
 						onClick={redeemNft}
 					>
 						{loading ? (
-							<span>	Redeeming... </span>
+							<span> Redeeming... </span>
 						) : (
 							<>
-								<span className="mr-1">Redeem</span><RedeemIcon />
+								<span className="mr-1">Redeem</span>
+								<RedeemIcon />
 							</>
 						)}
 					</button>
