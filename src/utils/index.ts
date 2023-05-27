@@ -23,7 +23,8 @@ import base58 from "bs58";
 import { createHash } from "crypto";
 import { NextApiRequest } from "next";
 
-export const ENDPOINT = "https://api.metaplex.solana.com/";
+export const ENDPOINT =
+	"https://rpc.helius.xyz/?api-key=433d703d-fe5a-4ac3-b293-0ba6c8d6ff20";
 export const MINT_ACCOUNT = "GDMUq5rPdyPm67DHEmRv4aUy7R181R66rWKjRjwQ7pa3";
 export const ORG_ACCOUNT = "9uNgWMGhiGwMddgwgyE8T5FBTA4kZE4ry7bUxvVtnxor";
 
