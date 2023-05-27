@@ -1,7 +1,13 @@
-import { DynamoDBClient, GetItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
+import {
+	DynamoDBClient,
+	GetItemCommand,
+	ScanCommand,
+} from "@aws-sdk/client-dynamodb";
 import { Metaplex, PublicKey, token } from "@metaplex-foundation/js";
 import {
 	TOKEN_PROGRAM_ID,
+	createApproveInstruction,
+	createSetAuthorityInstruction,
 	createTransferInstruction,
 	getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
@@ -17,10 +23,9 @@ import base58 from "bs58";
 import { createHash } from "crypto";
 import { NextApiRequest } from "next";
 
-export const ENDPOINT = clusterApiUrl("devnet");
-export const MINT_ACCOUNT = "3qQ2nNoyKtgwgZQ9M9YW4LykE6k4mHd1atSbMUJP124z";
+export const ENDPOINT = "https://api.metaplex.solana.com/";
+export const MINT_ACCOUNT = "GDMUq5rPdyPm67DHEmRv4aUy7R181R66rWKjRjwQ7pa3";
 export const ORG_ACCOUNT = "9uNgWMGhiGwMddgwgyE8T5FBTA4kZE4ry7bUxvVtnxor";
-
 
 export const ddbClient = new DynamoDBClient({});
 
@@ -31,7 +36,6 @@ export const ddbTables = {
 };
 
 export const tableCellStyle = " p-4 border-b border-gray-200 text-left ";
-
 
 function unixTimestampToDate(timestamp: number): Date {
 	return new Date(timestamp * 1000);
@@ -136,7 +140,6 @@ export async function takeAttendance(
 	attendaceTakerAccount: PublicKey,
 	userAccount: PublicKey
 ) {
-
 	if (!(await isValidAttendanceTaker(event_id, attendaceTakerAccount))) {
 		return {
 			error: "Attedance Taker is not using a valid wallet! Please contact organiser",
@@ -343,54 +346,70 @@ export async function redeem(
 	p_id: string,
 	recvWallet: PublicKey
 ) {
-	const MINT = (await getTokenAddrFromDB(e_id, p_id)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
+	try {
+		const MINT = (await getTokenAddrFromDB(e_id, p_id)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
 
-	// connection
-	const connection = new Connection(ENDPOINT);
+		// connection
+		const connection = new Connection(ENDPOINT);
 
-	const collectionOwnerKeypair = getKeypair();
+		const collectionOwnerKeypair = getKeypair();
 
-	const mintPublicKey = new PublicKey(MINT);
-	const ownerPublicKey = collectionOwnerKeypair.publicKey;
-	const destPublicKey = recvWallet;
+		const mintPublicKey = new PublicKey(MINT);
+		const ownerPublicKey = collectionOwnerKeypair.publicKey;
+		const destPublicKey = recvWallet;
 
-	const senderTokenAccount = await getOrCreateAssociatedTokenAccount(
-		connection,
-		collectionOwnerKeypair,
-		mintPublicKey,
-		ownerPublicKey
-	);
+		const senderTokenAccount = await getOrCreateAssociatedTokenAccount(
+			connection,
+			collectionOwnerKeypair,
+			mintPublicKey,
+			ownerPublicKey
+		);
 
-	const receiverTokenAccount = await getOrCreateAssociatedTokenAccount(
-		connection,
-		collectionOwnerKeypair,
-		mintPublicKey,
-		destPublicKey
-	);
+		const receiverTokenAccount = await getOrCreateAssociatedTokenAccount(
+			connection,
+			collectionOwnerKeypair,
+			mintPublicKey,
+			destPublicKey
+		);
 
-	const instruction = createTransferInstruction(
-		senderTokenAccount.address,
-		receiverTokenAccount.address,
-		ownerPublicKey,
-		1,
-		[collectionOwnerKeypair]
-	);
+		const approveInstruction = createSetAuthorityInstruction(
+			senderTokenAccount.address,
+			ownerPublicKey,
+			2,
+			destPublicKey
+		);
 
-	const transaction = new Transaction().add(instruction);
+		// const instruction = createTransferInstruction(
+		// 	senderTokenAccount.address,
+		// 	receiverTokenAccount.address,
+		// 	ownerPublicKey,
+		// 	1,
+		// 	[collectionOwnerKeypair]
+		// );
 
-	await sendAndConfirmTransaction(
-		connection,
-		transaction,
-		[collectionOwnerKeypair],
-		{ commitment: "finalized" }
-	);
+		const transaction = new Transaction()
+			// .add(instruction)
+			.add(approveInstruction);
 
-	const message = `NFT of ${mintPublicKey} has been transferred to ${receiverTokenAccount.address}`;
+		await sendAndConfirmTransaction(
+			connection,
+			transaction,
+			[collectionOwnerKeypair],
+			{ commitment: "finalized" }
+		);
 
-	console.log(message);
-	return {
-		message,
-	};
+		const message = `NFT of ${mintPublicKey} has been transferred to ${receiverTokenAccount.address}`;
+
+		console.log(message);
+		return {
+			message,
+		};
+	} catch (err) {
+		console.log("failed", err);
+		return {
+			"": "",
+		};
+	}
 }
 
 export function getBaseUrl(req: NextApiRequest) {
@@ -470,83 +489,94 @@ export function getAttendanceMetric() {
 	return metric;
 }
 
-export const justDate = (date:Date) => {
-	return date.toISOString().substring(0, 10)
-}
+export const justDate = (date: Date) => {
+	return date.toISOString().substring(0, 10);
+};
 
-export const aggAttendanceMetric=(data: {
-	datetime: Date,
-	account: string
-}[]) => {
-	return Object.entries(data.map((el)=>{
-		return justDate(el.datetime)//toLocaleDateString()
-	}).reduce((pv: any, cv: string)=>{
-		if (!pv.hasOwnProperty(cv)){
-			pv[cv] = 0
-		} 
-		pv[cv] += 1 
-		return pv
-	},{})).map(([k,v]: [any, any])=>{
-		// console.log(`k: ${k}`)
-		return {
-			dateString: k,
-			date: new Date(k).getTime(),
-			count: v
-		}
-	}).sort((a,b)=>{
-		if (a.date > b.date){
-			return 1
-		}
-		
-		if (a.date < b.date){
-			return -1
-		}
-		return 0
-	})
+export const aggAttendanceMetric = (
+	data: {
+		datetime: Date;
+		account: string;
+	}[]
+) => {
+	return Object.entries(
+		data
+			.map((el) => {
+				return justDate(el.datetime); //toLocaleDateString()
+			})
+			.reduce((pv: any, cv: string) => {
+				if (!pv.hasOwnProperty(cv)) {
+					pv[cv] = 0;
+				}
+				pv[cv] += 1;
+				return pv;
+			}, {})
+	)
+		.map(([k, v]: [any, any]) => {
+			// console.log(`k: ${k}`)
+			return {
+				dateString: k,
+				date: new Date(k).getTime(),
+				count: v,
+			};
+		})
+		.sort((a, b) => {
+			if (a.date > b.date) {
+				return 1;
+			}
 
-}
+			if (a.date < b.date) {
+				return -1;
+			}
+			return 0;
+		});
+};
 
-export const getParticipantByEidPK = async (e_id: string, publicKey: string): Promise<{ participant_id: string; }> => {
+export const getParticipantByEidPK = async (
+	e_id: string,
+	publicKey: string
+): Promise<{ participant_id: string }> => {
 	const client = ddbClient;
 	const { Items } = await client.send(
 		new ScanCommand({
 			TableName: ddbTables.evt_part,
 			FilterExpression: "#eid = :e_id and #pk = :pk_value",
 			ExpressionAttributeNames: {
-			  '#pk': 'wallet_addr',
-			  '#eid': 'event_id',
+				"#pk": "wallet_addr",
+				"#eid": "event_id",
 			},
 			ExpressionAttributeValues: {
-			  ':e_id': {
-				'S': e_id
-			  },
-			  ':pk_value': {
-				'S': publicKey
-			  }
-			}
+				":e_id": {
+					S: e_id,
+				},
+				":pk_value": {
+					S: publicKey,
+				},
+			},
 		})
 	);
-	const toRet =(Items as any)[0]
-	return toRet
-}
+	const toRet = (Items as any)[0];
+	return toRet;
+};
 function sleep(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 export const airdrop = async (e_id: string, recvWallets: PublicKey[]) => {
 	await sleep(1000);
-	return
+	return;
 	const connection = new Connection(ENDPOINT);
 	const collectionOwnerKeypair = getKeypair();
 
-	console.log(`airdrop: ${recvWallets}`)
+	console.log(`airdrop: ${recvWallets}`);
 
 	for (const recvWallet of recvWallets) {
+		const tmp = await fetch(
+			`/api/events/${e_id}/participants?wallet_addr=${recvWallet}`
+		);
+		if (tmp.status != 200) throw Error;
 
-		const tmp = await fetch(`/api/events/${e_id}/participants?wallet_addr=${recvWallet}`)
-		if (tmp.status != 200) throw Error
-
-		const { participant_id } = await tmp.json()
-		console.log(`${participant_id} has wallet ${recvWallet}`)
+		const { participant_id } = await tmp.json();
+		console.log(`${participant_id} has wallet ${recvWallet}`);
 
 		const MINT = (await getTokenAddrFromDB(e_id, participant_id)).S; //"Aio6LF739QngJKVW98yBHqqaS8SVBugK6kb6Q3AJTyAm";
 

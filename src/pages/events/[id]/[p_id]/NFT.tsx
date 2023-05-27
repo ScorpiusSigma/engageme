@@ -234,8 +234,8 @@ export default function PartProfile() {
 							</p>
 						</div>
 					)}
-					<div className="px-5 pb-5 flex flex-col justify-center items-center w-full h-1/2">
-						<div className="flex justify-center items-center w-max h-full">
+					<div className="px-5 pb-5 flex flex-col justify-center items-center w-full h-max">
+						<div className="flex justify-center items-center w-max h-max">
 							<ReactCardFlip
 								isFlipped={isImgFlip}
 								flipDirection="horizontal"
@@ -247,7 +247,7 @@ export default function PartProfile() {
 							>
 								<img
 									src={nftDeets.image}
-									className="rounded-3xl h-full"
+									className="rounded-3xl h-60"
 									onClick={flipCard}
 								/>
 								<img
@@ -259,7 +259,7 @@ export default function PartProfile() {
 										background: "white",
 									}}
 									alt="QR Code"
-									className="rounded-3xl h-full"
+									className="rounded-3xl h-60"
 								/>
 							</ReactCardFlip>
 						</div>
@@ -303,7 +303,7 @@ export default function PartProfile() {
 						<div className="flex justify-center items-center">
 							<img
 								src={nftDeets?.image}
-								className="rounded-3xl h-full"
+								className="rounded-3xl h-60"
 							/>
 						</div>
 					</div>
