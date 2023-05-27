@@ -113,7 +113,7 @@ export default function DailyAttenGraph({
     if(data != undefined && data != null){
         // console.log(data[0])
         const startDate = new Date(data[0].date);
-        const endDate = new Date(data[1].date);
+        const endDate = new Date(data[data.length - 1].date);
         domain = [(dataMin: any) => dataMin, () => endDate.getTime()];
         ticks = getTicks(startDate, endDate, 5);
         // console.log(`ticks: ${ticks}`)
